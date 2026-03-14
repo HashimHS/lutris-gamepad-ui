@@ -20,8 +20,12 @@ const {
   toastError,
   getProcessDescendants,
   isProcessPaused,
+  isStandaloneSession,
 } = require("./utils.cjs");
-const { toggleWindowShow } = require("./window_manager.cjs");
+const {
+  toggleWindowShow,
+  setStandaloneToggleHandler,
+} = require("./window_manager.cjs");
 const {
   getCoverartPath,
   getRuntimeIconPath,
@@ -303,6 +307,47 @@ function launchGame(gameId) {
   const mainWindow = getMainWindow();
   if (mainWindow) {
     mainWindow.webContents.send("game-started", gameId);
+
+    if (isStandaloneSession()) {
+      // In standalone mode, immediately hide the UI and keep the game visible.
+      mainWindow.hide();
+    }
+  }
+
+  const standaloneToggle = () => {
+    const activeWindow = getMainWindow();
+    const runningGame = getRunningGameProcess();
+    const shouldAutoPause = getAppConfig().autoPauseGameOnOverlaySwitch;
+
+    if (!activeWindow) {
+      return false;
+    }
+
+    const isUiVisible = activeWindow.isVisible() && !activeWindow.isMinimized();
+
+    if (isUiVisible) {
+      if (runningGame && shouldAutoPause) {
+        toggleGamePause({ forceStatus: "running" });
+      }
+      activeWindow.hide();
+      return true;
+    }
+
+    if (runningGame && shouldAutoPause) {
+      toggleGamePause({ forceStatus: "paused" });
+    }
+
+    if (activeWindow.isMinimized()) {
+      activeWindow.restore();
+    }
+    activeWindow.show();
+    activeWindow.focus();
+
+    return true;
+  };
+
+  if (isStandaloneSession()) {
+    setStandaloneToggleHandler(standaloneToggle);
   }
 
   globalShortcut.register("CommandOrControl+X", toggleWindowShow);
@@ -313,6 +358,7 @@ function launchGame(gameId) {
       mainWindow.webContents.send("game-closed");
       mainWindow.show();
     }
+    setStandaloneToggleHandler(null);
     globalShortcut.unregister("CommandOrControl+X");
   };
 

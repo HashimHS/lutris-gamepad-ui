@@ -132,6 +132,7 @@
     "Playtime: {{playtime}}": "Playtime: {{playtime}}"
   },
   "components/SettingsMenu.jsx": {
+    "Auto-Pause Game On Overlay Switch": "Auto-Pause Game On Overlay Switch",
     "Close": "Close",
     "Decrease": "Decrease",
     "Disable": "Disable",

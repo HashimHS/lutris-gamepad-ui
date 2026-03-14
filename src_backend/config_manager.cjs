@@ -10,6 +10,7 @@ const defaultConfig = {
   doubleConfirmPowerManagement: true,
   gamepadAutorepeatMs: 225,
   useRemoteDesktopPortal: true,
+  autoPauseGameOnOverlaySwitch: false,
   showRunnerIcon: true,
   keepGamesRunningOnQuit: false,
   enableUiActionSoundFeedbacks: true,

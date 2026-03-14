@@ -98,6 +98,13 @@ const SettingsMenu = ({ onClose }) => {
     );
   }, [settings, updateSetting]);
 
+  const toggleAutoPauseGameOnOverlaySwitch = useCallback(() => {
+    updateSetting(
+      "autoPauseGameOnOverlaySwitch",
+      !settings.autoPauseGameOnOverlaySwitch,
+    );
+  }, [settings, updateSetting]);
+
   const menuSections = useMemo(() => {
     const generalItems = [];
     if (settings.zoomFactor !== undefined) {
@@ -155,6 +162,12 @@ const SettingsMenu = ({ onClose }) => {
         label: t("UI Action Sound Feedbacks"),
       });
     }
+    if (settings.autoPauseGameOnOverlaySwitch !== undefined) {
+      inputPowerItems.push({
+        type: "AUTO_PAUSE_GAME_ON_OVERLAY_SWITCH",
+        label: t("Auto-Pause Game On Overlay Switch"),
+      });
+    }
 
     return [
       { id: "general", label: t("General"), items: generalItems },
@@ -175,6 +188,9 @@ const SettingsMenu = ({ onClose }) => {
       switch (item.type) {
         case "ENABLE_UI_ACTION_SOUND_FEEDBACKS":
           if (actionName === "A") toggleEnableUiActionSoundFeedbacks();
+          break;
+        case "AUTO_PAUSE_GAME_ON_OVERLAY_SWITCH":
+          if (actionName === "A") toggleAutoPauseGameOnOverlaySwitch();
           break;
         case "KEEP_GAMES_RUNNING":
           if (actionName === "A") toggleKeepGamesRunningOnQuit();
@@ -217,6 +233,7 @@ const SettingsMenu = ({ onClose }) => {
       toggleUseRemoteDesktopPortal,
       toggleKeepGamesRunningOnQuit,
       toggleEnableUiActionSoundFeedbacks,
+      toggleAutoPauseGameOnOverlaySwitch,
     ],
   );
 
@@ -379,6 +396,23 @@ const SettingsMenu = ({ onClose }) => {
               />
             </FocusableRow>
           );
+        case "AUTO_PAUSE_GAME_ON_OVERLAY_SWITCH":
+          return (
+            <FocusableRow
+              key={item.type}
+              isFocused={isFocused}
+              onMouseEnter={onMouseEnter}
+              onClick={toggleAutoPauseGameOnOverlaySwitch}
+            >
+              <span className="settings-menu-label">{item.label}</span>
+              <ToggleButton
+                isToggledOn={settings.autoPauseGameOnOverlaySwitch}
+                labelOn={t("Disable")}
+                labelOff={t("Enable")}
+                onClick={toggleAutoPauseGameOnOverlaySwitch}
+              />
+            </FocusableRow>
+          );
         default:
           return null;
       }
@@ -393,6 +427,7 @@ const SettingsMenu = ({ onClose }) => {
       toggleUseRemoteDesktopPortal,
       toggleKeepGamesRunningOnQuit,
       toggleEnableUiActionSoundFeedbacks,
+      toggleAutoPauseGameOnOverlaySwitch,
     ],
   );
 
@@ -472,6 +507,14 @@ const SettingsMenu = ({ onClose }) => {
           : t("Enable"),
         onClick: toggleEnableUiActionSoundFeedbacks,
       });
+    } else if (focusedItem?.type === "AUTO_PAUSE_GAME_ON_OVERLAY_SWITCH") {
+      buttons.push({
+        button: "A",
+        label: settings.autoPauseGameOnOverlaySwitch
+          ? t("Disable")
+          : t("Enable"),
+        onClick: toggleAutoPauseGameOnOverlaySwitch,
+      });
     }
 
     buttons.push({ button: "B", label: t("Close"), onClick: onClose });
@@ -492,6 +535,7 @@ const SettingsMenu = ({ onClose }) => {
     toggleUseRemoteDesktopPortal,
     toggleKeepGamesRunningOnQuit,
     toggleEnableUiActionSoundFeedbacks,
+    toggleAutoPauseGameOnOverlaySwitch,
     onClose,
     t,
   ]);

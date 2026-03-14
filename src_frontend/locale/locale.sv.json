@@ -133,6 +133,7 @@
     "Playtime: {{playtime}}": "Speltid: {{playtime}}"
   },
   "components/SettingsMenu.jsx": {
+    "Auto-Pause Game On Overlay Switch": "Auto-pausa spel vid overlay-växling",
     "Close": "Stäng",
     "Decrease": "Minska",
     "Disable": "Inaktivera",

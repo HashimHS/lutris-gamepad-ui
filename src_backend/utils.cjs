@@ -37,6 +37,7 @@ async function spawnDdcutil(args) {
 
 const isDev = process.env.IS_DEV === "1";
 const forceWindowed = process.env.FORCE_WINDOWED === "1";
+const standaloneSession = process.env.STANDALONE_SESSION === "1";
 
 function localeAppFile(name) {
   const DIRECTORIES = [
@@ -238,6 +239,7 @@ function getRunExclusive() {
 module.exports = {
   isDev,
   forceWindowed,
+  standaloneSession,
   execPromise,
   spawnGSettings,
   spawnDdcutil,
@@ -251,6 +253,7 @@ module.exports = {
   showToastOnUi,
   toastError,
   isRunningInsideGamescope,
+  isStandaloneSession: () => standaloneSession,
   rebootPc,
   powerOffPc,
   getProcessDescendants,

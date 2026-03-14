@@ -23,6 +23,7 @@ const {
   debounce,
   logInfo,
   isRunningInsideGamescope,
+  isStandaloneSession,
 } = require("./utils.cjs");
 const {
   startRemoteDesktopSession,
@@ -60,6 +61,12 @@ let sendAltTabDebounced = createSendAltTabDebounced(
   getAppConfig().gamepadAutorepeatMs,
 );
 
+let standaloneToggleHandler = null;
+
+function setStandaloneToggleHandler(handler) {
+  standaloneToggleHandler = handler;
+}
+
 subscribeConfigValueChange("gamepadAutorepeatMs", (newValue) => {
   sendAltTabDebounced = createSendAltTabDebounced(newValue);
 });
@@ -67,6 +74,29 @@ subscribeConfigValueChange("gamepadAutorepeatMs", (newValue) => {
 function toggleWindowShow() {
   const mainWindow = getMainWindow();
   if (!mainWindow) {
+    return;
+  }
+
+  if (isStandaloneSession()) {
+    if (standaloneToggleHandler) {
+      const handled = standaloneToggleHandler();
+      if (handled) {
+        logInfo("toggleWindowShow: using standalone session handler");
+        return;
+      }
+    }
+
+    logInfo("toggleWindowShow: using standalone show/hide fallback");
+    const isVisible = mainWindow.isVisible() && !mainWindow.isMinimized();
+    if (isVisible) {
+      mainWindow.hide();
+    } else {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.show();
+      mainWindow.focus();
+    }
     return;
   }
 
@@ -188,7 +218,7 @@ function createWindow(onWindowClosedCallback) {
   }, 1000);
 
   win.on("focus", () => {
-    if (!isRunningInsideGamescope()) {
+    if (!isRunningInsideGamescope() && !isStandaloneSession()) {
       startRemoteDesktopSessionDebounced();
     }
   });
@@ -224,6 +254,10 @@ function createWindow(onWindowClosedCallback) {
   });
 
   subscribeConfigValueChange("useRemoteDesktopPortal", (enabled) => {
+    if (isStandaloneSession()) {
+      return;
+    }
+
     if (enabled) {
       startRemoteDesktopSessionDebounced();
     } else {
@@ -238,5 +272,6 @@ function createWindow(onWindowClosedCallback) {
 
 module.exports = {
   createWindow,
+  setStandaloneToggleHandler,
   toggleWindowShow,
 };

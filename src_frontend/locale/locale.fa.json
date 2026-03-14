@@ -133,6 +133,7 @@
     "Playtime: {{playtime}}": "زمان بازی: {{playtime}}"
   },
   "components/SettingsMenu.jsx": {
+    "Auto-Pause Game On Overlay Switch": "توقف خودکار بازی هنگام جابجایی پوشش",
     "Close": "بستن",
     "Decrease": "کاهش",
     "Disable": "غیرفعال کردن",

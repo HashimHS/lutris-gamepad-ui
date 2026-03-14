@@ -50,6 +50,15 @@ Arch Linux users (and users of Arch-based distributions) can install [`lutris-ga
   - **Advanced Settings:** Fine-tune your experience with settings for gamepad autorepeat delay, UI zoom level, and sound feedback.
   - **Theming:** Fully customizable appearance via `theme.json` (see the Custom Theming Guide below).
 
+## Launching with a non-desktop session
+
+From a TTY session, launch via `gamescope` (recommended for session control):
+
+```bash
+export STANDALONE_SESSION=1
+gamescope --xwayland-count 2 -- "./lutris gamepad ui-0.1.31.AppImage"
+```
+
 ## Custom Theming Guide
 
 You can customize the application's appearance by creating a `theme.json` file to override default CSS properties.
