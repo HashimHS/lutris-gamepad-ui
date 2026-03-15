@@ -18,6 +18,7 @@
     "start:prod-wayland": "npm run build:vite && electron39 electron.cjs --ozone-platform=wayland",
     "start:prod-steamdeck": "npm run build:vite && gamescope -W 1280 -w 1280 -H 800 -h 800 -- electron39 electron.cjs",
     "build:vite": "vite build",
+    "preelectron:build": "npm run build:vite",
     "electron:build": "electron-builder --config electron-builder.config.cjs",
     "build": "npm run build:vite && npm run electron:build",
     "electron:dev": "wait-on http://localhost:5173 && electron ."
