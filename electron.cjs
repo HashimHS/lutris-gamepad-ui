@@ -1,10 +1,11 @@
 const { app, Menu } = require("electron");
-const { createWindow } = require("./src_backend/window_manager.cjs");
-const { registerIpcHandlers } = require("./src_backend/ipc_handlers.cjs");
+
+const { getAppConfig } = require("./src_backend/config_manager.cjs");
 const {
   closeRunningGameProcess,
   toggleGamePause,
 } = require("./src_backend/game_manager.cjs");
+const { registerIpcHandlers } = require("./src_backend/ipc_handlers.cjs");
 const { getMainWindow } = require("./src_backend/state.cjs");
 const {
   logInfo,
@@ -12,7 +13,7 @@ const {
   isDev,
   forceWindowed,
 } = require("./src_backend/utils.cjs");
-const { getAppConfig } = require("./src_backend/config_manager.cjs");
+const { createWindow } = require("./src_backend/window_manager.cjs");
 
 process.noAsar = true;
 
@@ -83,19 +84,25 @@ if (!forceWindowed && !isDev) {
   Menu.setApplicationMenu(null);
 }
 
-app.whenReady().then(() => {
-  app.setName("lutris-gamepad-ui");
+app
+  .whenReady()
+  .then(() => {
+    app.setName("lutris-gamepad-ui");
 
-  try {
-    registerIpcHandlers();
-    createWindow(() => {
-      logInfo("Main window closed!");
-      if (!getAppConfig().keepGamesRunningOnQuit) {
-        closeRunningGameProcess();
-      }
-    });
-  } catch (e) {
-    logError("Failed to initialize the application:", e);
+    try {
+      registerIpcHandlers();
+      createWindow(() => {
+        logInfo("Main window closed!");
+        if (!getAppConfig().keepGamesRunningOnQuit) {
+          closeRunningGameProcess();
+        }
+      });
+    } catch (e) {
+      logError("Failed to initialize the application:", e);
+      app.quit();
+    }
+  })
+  .catch((err) => {
+    console.error("Critical error during app launch:", err);
     app.quit();
-  }
-});
+  });

@@ -36,12 +36,14 @@
     "Clear Search": "Annulla ricerca",
     "Force close": "Forza chiusura di",
     "Launch Game": "Avvia gioco",
+    "Next": "Next",
+    "Options": "Options",
     "Pause Game": "Pausa gioco",
     "Power": "Menu di sistema",
+    "Prev": "Prev",
     "Resume Game": "Riprendi gioco",
     "Search": "Cerca",
-    "Toggle Overlay": "Visualizza overlay",
-    "game": "gioco"
+    "Toggle Overlay": "Visualizza overlay"
   },
   "components/CrashDialog.jsx": {
     "Close Application": "Chiudi applicazione",
@@ -78,45 +80,39 @@
     "Never": "Mai giocato",
     "Playtime: {{playtime}}": "Ore di gioco: {{playtime}}"
   },
-  "components/GameLibrary.jsx": {
-    "Add games in Lutris and reload.": "Aggiungi giochi da Lutris e aggiorna la libreria.",
-    "My Library": "La mia Libreria",
-    "No games found": "Nessun gioco presente",
-    "No results for \"{{searchQuery}}\"": "Nessun risultato per \"{{searchQuery}}\"",
-    "Search": "Ricerca",
-    "Try a different search term or press 'B' to clear.": "Prova un'altra ricerca o premi 'B' per annullare."
-  },
   "components/LibraryContainer.jsx": {
-    "All Games": "Tutti i giochi",
+    "Add games in Lutris and reload.": "Add games in Lutris and reload.",
     "Are you sure you want to close\n{{title}}?": "Forzare la chiusura di\n{{title}}?",
     "Are you sure you want to pause\n{{title}}?": "Are you sure you want to pause\n{{title}}?",
     "Loading library...": "Caricamento libreria...",
-    "Recently Played": "Giocati di recente",
-    "Results for \"{{searchQuery}}\"": "Risultati per \"{{searchQuery}}\"",
+    "My Library": "My Library",
+    "No games found": "No games found",
+    "No results for \"{{searchQuery}}\"": "No results for \"{{searchQuery}}\"",
+    "Search": "Search",
     "Search Library": "Cerca nella libreria",
     "This action will force-quit the game. Any unsaved progress may be lost.": "Questa operazione forzerà la chiusura del gioco. Eventuali progressi non salvati andranno persi.",
-    "This feature is experimental. Pausing the game may cause issues.": "Questa funzionalità è sperimentale. Mettere in pausa il gioco potrebbe causare problemi."
+    "This feature is experimental. Pausing the game may cause issues.": "Questa funzionalità è sperimentale. Mettere in pausa il gioco potrebbe causare problemi.",
+    "Try a different search term or press 'B' to clear.": "Try a different search term or press 'B' to clear."
   },
   "components/LoadingIndicator.jsx": {
     "Loading...": "Caricamento..."
   },
-  "components/LutrisSettings.jsx": {
-    "Close": "Chiudi",
-    "D3D Extras": "Extra D3D",
-    "DXVK": "DXVK",
-    "Disable": "Disattiva",
-    "Enable": "Attiva",
-    "Esync": "Esync",
-    "Failed to load or update Lutris settings.": "Impossibile caricare o aggiornare le impostazioni di Lutris.",
-    "Fsync": "Fsync",
-    "Loading Lutris Settings...": "Caricamento impostazioni Lutris...",
-    "Lutris Settings": "Impostazioni Lutris",
-    "Next": "Successivo",
-    "No proton versions available.": "Nessuna versione Proton disponibile.",
-    "Prev": "Precedente",
-    "Proton Version": "Versione Proton",
-    "Reload": "Ricarica",
-    "Updating Lutris setting...": "Aggiornamento impostazione Lutris..."
+  "components/LutrisSettingsFlow.jsx": {
+    "Failed to fetch Lutris runners": "Failed to fetch Lutris runners",
+    "Global": "Global",
+    "Lutris Settings": "Lutris Settings",
+    "Select Runner": "Select Runner"
+  },
+  "components/LutrisSettingsMenu.jsx": {
+    "Close": "Close",
+    "Default": "Default",
+    "Disable": "Disable",
+    "Enable": "Enable",
+    "Lutris Settings": "Lutris Settings",
+    "Next": "Next",
+    "Prev": "Prev",
+    "Select": "Select",
+    "Settings: {{name}}": "Settings: {{name}}"
   },
   "components/OnScreenKeyboard.jsx": {
     "Backspace": "Cancella",
@@ -133,6 +129,10 @@
     "Now Playing": "In gioco",
     "Paused": "In pausa",
     "Playtime: {{playtime}}": "Ore di gioco: {{playtime}}"
+  },
+  "components/SelectionMenu.jsx": {
+    "Back": "Back",
+    "Select": "Select"
   },
   "components/SettingsMenu.jsx": {
     "Auto-Pause Game On Overlay Switch": "Auto-pausa gioco al cambio overlay",
@@ -172,8 +172,7 @@
     "Display Settings": "Display Settings",
     "Exit Application": "Esci",
     "Generate Bug Report": "Genera segnalazione bug",
-    "Library reloaded successfully!": "Libreria ricaricata con successo!",
-    "Lutris Settings": "Impostazioni Lutris",
+    "Lutris Settings": "Lutris Settings",
     "Open Lutris": "Apri Lutris",
     "Power Off System": "Spegni il sistema",
     "Reboot System": "Riavvia il sistema",
@@ -211,5 +210,10 @@
     "UI Action Sound Feedbacks": "Feedback sonoro UI",
     "Unmute": "Riattiva audio",
     "Volume": "Volume"
+  },
+  "hooks/useGameShelves.js": {
+    "All Games": "All Games",
+    "Recently Played": "Recently Played",
+    "Results for \"{{searchQuery}}\"": "Results for \"{{searchQuery}}\""
   }
 }

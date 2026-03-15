@@ -1,12 +1,18 @@
 import React from "react";
+
 import ReactDOM from "react-dom/client";
+
 import App from "./App.jsx";
 import "./styles/main.css";
 
 if (import.meta.env.DEV) {
-  import("react-scan").then(({ scan }) => {
-    scan({ enabled: true });
-  });
+  import("react-scan")
+    .then(({ scan }) => {
+      scan({ enabled: true });
+    })
+    .catch((err) => {
+      console.error("Failed to load react-scan:", err);
+    });
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(

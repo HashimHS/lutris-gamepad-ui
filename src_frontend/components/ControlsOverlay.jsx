@@ -1,7 +1,9 @@
 import React from "react";
+
 import "../styles/ControlsOverlay.css";
-import LegendaContainer from "./LegendaContainer";
 import { useTranslation } from "../contexts/TranslationContext";
+
+import LegendaContainer from "./LegendaContainer";
 
 const ControlsOverlay = ({
   children,
@@ -9,12 +11,20 @@ const ControlsOverlay = ({
   onLaunchGame,
   onClearSearch,
   onShowSearchModal,
+  onShowGameSettings,
   onOpenSystemMenu,
   onToggleGamePause,
+  onPrevCategory,
+  onNextCategory,
   isGamePaused,
 }) => {
   const { t } = useTranslation();
   const legendItems = [];
+
+  if (onPrevCategory && onNextCategory) {
+    legendItems.push({ button: "L1", label: t("Prev") });
+    legendItems.push({ button: "R1", label: t("Next") });
+  }
 
   if (onCloseRunningGame) {
     legendItems.push({ button: "Super", label: t("Toggle Overlay") });
@@ -39,6 +49,14 @@ const ControlsOverlay = ({
       button: "A",
       label: t("Launch Game"),
       onClick: onLaunchGame,
+    });
+  }
+
+  if (onShowGameSettings) {
+    legendItems.push({
+      button: "Start",
+      label: t("Options"),
+      onClick: onShowGameSettings,
     });
   }
 

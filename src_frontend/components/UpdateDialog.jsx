@@ -1,8 +1,10 @@
 import { useMemo, useCallback } from "react";
-import { openExternalLink } from "../utils/ipc";
+
 import { useTranslation } from "../contexts/TranslationContext";
-import { useScopedInput } from "../hooks/useScopedInput";
 import { usePlayButtonActionSound } from "../hooks/usePlayButtonActionSound";
+import { useScopedInput } from "../hooks/useScopedInput";
+import { openExternalLink } from "../utils/ipc";
+
 import DialogLayout from "./DialogLayout";
 
 export const UpdateDialogFocusId = "UpdateDialog";
@@ -55,13 +57,15 @@ const UpdateDialog = ({ newVersion, releaseUrl, onClose }) => {
       legendItems={legendItems}
       maxWidth="450px"
     >
-      <button
-        className="modal-button focused"
-        style={{ width: "100%" }}
-        onClick={handleOpenLink}
-      >
-        {t("Go to Downloads")}
-      </button>
+      <div className="modal-buttons-group">
+        <button
+          className="modal-button focused"
+          style={{ width: "100%" }}
+          onClick={handleOpenLink}
+        >
+          {t("Go to Downloads")}
+        </button>
+      </div>
     </DialogLayout>
   );
 };

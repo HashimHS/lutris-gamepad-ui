@@ -1,21 +1,31 @@
+import os.path
 import json
 import runpy
 import shutil
 import sys
 import typing
+from inspect import signature
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__import__("lutris").__file__)))
 
 import gi
 
-gi.require_version('Gtk', '3.0')
+gi.require_version("Gtk", "3.0")
 
 from gi.repository import Gtk
-from lutris import settings
+from lutris import settings, sysoptions
 from lutris.config import LutrisConfig
 from lutris.database import categories, games
+from lutris.database.games import get_game_by_field
 from lutris.gui.widgets.utils import get_runtime_icon_path
-from lutris.util.wine.proton import is_proton_version
-from lutris.util.wine.wine import GE_PROTON_LATEST, get_installed_wine_versions
+from lutris.runners import import_runner
+from lutris.startup import init_lutris
+from lutris.runners import get_installed as get_installed_runners
 
+try:
+    from lutris.runners import InvalidRunnerError
+except ImportError:
+    from lutris.runners import InvalidRunner as InvalidRunnerError
 
 SUBCOMMAND_OUTPUT_HEADER = "lutris-subcommand-output:"
 SUPPORTED_LUTRIS_BOOL_SETTINGS = {"dxvk", "d3d_extras", "esync", "fsync"}
@@ -47,7 +57,7 @@ def get_all_games_categories_main():
 
     result = {
         "categories": categories.get_categories(),
-        "all_games_categories": all_games_categories
+        "all_games_categories": all_games_categories,
     }
 
     _print_subcommand_output(result)
@@ -57,80 +67,151 @@ def list_games_main():
     _print_subcommand_output(games.get_games(filters={"installed": 1}))
 
 
-def _format_proton_version_label(version: str):
-    if version == GE_PROTON_LATEST:
-        return "GE-Proton (Latest)"
-
-    return version
-
-
-def _get_available_proton_versions():
-    versions = []
-
-    for version in get_installed_wine_versions():
-        if version == GE_PROTON_LATEST or is_proton_version(version):
-            versions.append(version)
-
-    return versions
+def get_config(game_slug=None, runner_slug=None):
+    if game_slug:
+        game = get_game_by_field(game_slug, "slug") or get_game_by_field(
+            game_slug, "id"
+        )
+        if not game:
+            return None, None
+        return (
+            LutrisConfig(runner_slug=game["runner"], game_config_id=game["configpath"]),
+            game["runner"],
+        )
+    return LutrisConfig(runner_slug=runner_slug), runner_slug
 
 
-def _get_proton_version_options(current_version: typing.Optional[str] = None):
-    options = [
-        {
-            "label": _format_proton_version_label(version),
-            "value": version,
-        }
-        for version in _get_available_proton_versions()
-    ]
-
-    if current_version and not any(option["value"] == current_version for option in options):
-        options.insert(0, {"label": current_version, "value": current_version})
-
-    return options
+def normalize_choice(item):
+    if isinstance(item, str):
+        return (item, item)
+    if hasattr(item, "__iter__"):
+        items = list(item)
+        label = str(items[0]) if items else ""
+        value = str(items[1]) if len(items) > 1 else label
+        return (label, value)
+    return (str(item), str(item))
 
 
-def _get_lutris_config_payload(config: LutrisConfig):
+def resolve_choices(source, key):
+    if not source:
+        return []
+    if callable(source):
+        sig = signature(source)
+        items = source(key) if sig.parameters else source()
+    else:
+        items = source
+    return [normalize_choice(i) for i in items]
+
+
+def is_available(opt):
+    return not any(
+        opt.get(k) and callable(opt[k]) and not opt[k]()
+        for k in ["available", "condition"]
+    )
+
+
+def format_option(opt, values):
+    key = opt["option"]
+    default_val = opt.get("default")
+    if callable(default_val):
+        try:
+            default_val = default_val()
+        except Exception:
+            default_val = str(default_val)
     return {
-        "protonVersion": config.runner_config.get("version") or GE_PROTON_LATEST,
-        "availableProtonVersions": _get_proton_version_options(
-            config.runner_config.get("version") or GE_PROTON_LATEST
+        "key": key,
+        "label": opt.get("label"),
+        "help": opt.get("help"),
+        "type": opt.get("type"),
+        "value": values.get(key),
+        "default": default_val,
+        "choices": (
+            resolve_choices(opt.get("choices"), key) if "choices" in opt else None
         ),
-        "dxvkEnabled": bool(config.runner_config.get("dxvk")),
-        "d3dExtrasEnabled": bool(config.runner_config.get("d3d_extras")),
-        "esyncEnabled": bool(config.runner_config.get("esync")),
-        "fsyncEnabled": bool(config.runner_config.get("fsync")),
+        "advanced": opt.get("advanced", False),
     }
 
 
-def get_lutris_config_main():
-    config = LutrisConfig(runner_slug="wine")
-    _print_subcommand_output(_get_lutris_config_payload(config))
+def get_settings_main(game_slug=None, runner_slug=None):
+    init_lutris()
+    game_name = None
+    if game_slug:
+        game = get_game_by_field(game_slug, "slug") or get_game_by_field(
+            game_slug, "id"
+        )
+        if game:
+            game_name = game["name"]
+
+    config, r_slug = get_config(game_slug, runner_slug)
+    if not config:
+        _print_subcommand_output({})
+        return
+
+    runner = None
+    if r_slug:
+        try:
+            runner = import_runner(r_slug)()
+        except InvalidRunnerError:
+            pass
+
+    sections = [
+        (
+            "system",
+            (
+                sysoptions.with_runner_overrides(r_slug)
+                if r_slug
+                else sysoptions.system_options
+            ),
+            config.system_config,
+        )
+    ]
+    if runner:
+        sections.append(("runner", runner.get_runner_options(), config.runner_config))
+        sections.append(("game", runner.game_options, config.game_config))
+
+    _print_subcommand_output(
+        {
+            "settings": {
+                name: [format_option(o, vals) for o in meta if is_available(o)]
+                for name, meta, vals in sections
+            },
+            "runner_slug": r_slug,
+            "game_name": game_name,
+        }
+    )
 
 
-def set_lutris_proton_version_main(version: str):
-    if version not in _get_available_proton_versions():
-        raise ValueError(f"Invalid Lutris proton version: {version}")
+def update_setting_main(
+    section, key, value, value_type=None, game_slug=None, runner_slug=None
+):
+    init_lutris()
+    config, _ = get_config(game_slug, runner_slug)
+    if not config:
+        sys.exit(1)
 
-    config = LutrisConfig(runner_slug="wine")
-    config.raw_runner_config["version"] = version
+    target_attr = f"{config.level}_level"
+    target = getattr(config, target_attr)
+
+    if section == "runner" and config.runner_slug:
+        section = config.runner_slug
+
+    if section not in target:
+        target[section] = {}
+
+    if value_type == "bool":
+        value = value.lower() == "true"
+    elif value_type == "int":
+        value = int(value)
+
+    target[section][key] = value
     config.save()
+    _print_subcommand_output({"status": "success"})
 
-    _print_subcommand_output(_get_lutris_config_payload(config))
 
-
-def set_lutris_bool_setting_main(key: str, value_json: str):
-    if key not in SUPPORTED_LUTRIS_BOOL_SETTINGS:
-        raise ValueError(f"Invalid Lutris boolean setting: {key}")
-
-    value = json.loads(value_json)
-    if not isinstance(value, bool):
-        raise ValueError(f"Invalid value for Lutris boolean setting '{key}': {value}")
-
-    config = LutrisConfig(runner_slug="wine")
-    config.raw_runner_config[key] = value
-    config.save()
-
-    _print_subcommand_output(_get_lutris_config_payload(config))
+def list_runners_main():
+    installed_runners = get_installed_runners()
+    result = [{"name": r.name, "human_name": r.human_name} for r in installed_runners]
+    _print_subcommand_output({"runners": result})
 
 
 def patch_gtk_dbus_singleton():
@@ -159,7 +240,9 @@ def main():
         get_coverart_path_main()
 
     elif "--get-runtime-icon-path" in sys.argv:
-        get_runtime_icon_path_main(sys.argv[sys.argv.index("--get-runtime-icon-path") + 1])
+        get_runtime_icon_path_main(
+            sys.argv[sys.argv.index("--get-runtime-icon-path") + 1]
+        )
 
     elif "--get-all-games-categories" in sys.argv:
         get_all_games_categories_main()
@@ -167,15 +250,40 @@ def main():
     elif "--list-games" in sys.argv:
         list_games_main()
 
-    elif "--get-lutris-config" in sys.argv:
-        get_lutris_config_main()
+    elif "--get-settings" in sys.argv:
+        game_slug = None
+        runner_slug = None
+        if "--game" in sys.argv:
+            game_slug = sys.argv[sys.argv.index("--game") + 1]
+        if "--runner" in sys.argv:
+            runner_slug = sys.argv[sys.argv.index("--runner") + 1]
+        get_settings_main(game_slug=game_slug, runner_slug=runner_slug)
 
-    elif "--set-lutris-proton-version" in sys.argv:
-        set_lutris_proton_version_main(sys.argv[sys.argv.index("--set-lutris-proton-version") + 1])
+    elif "--update-setting" in sys.argv:
+        idx = sys.argv.index("--update-setting")
+        section = sys.argv[idx + 1]
+        key = sys.argv[idx + 2]
+        value = sys.argv[idx + 3]
+        game_slug = None
+        runner_slug = None
+        value_type = None
+        if "--game" in sys.argv:
+            game_slug = sys.argv[sys.argv.index("--game") + 1]
+        if "--runner" in sys.argv:
+            runner_slug = sys.argv[sys.argv.index("--runner") + 1]
+        if "--type" in sys.argv:
+            value_type = sys.argv[sys.argv.index("--type") + 1]
+        update_setting_main(
+            section,
+            key,
+            value,
+            value_type=value_type,
+            game_slug=game_slug,
+            runner_slug=runner_slug,
+        )
 
-    elif "--set-lutris-bool-setting" in sys.argv:
-        index = sys.argv.index("--set-lutris-bool-setting")
-        set_lutris_bool_setting_main(sys.argv[index + 1], sys.argv[index + 2])
+    elif "--list-runners" in sys.argv:
+        list_runners_main()
 
     else:
         lutris_main()

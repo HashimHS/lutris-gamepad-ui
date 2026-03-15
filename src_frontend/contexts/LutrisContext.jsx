@@ -5,8 +5,9 @@ import {
   useEffect,
   useState,
 } from "react";
-import * as ipc from "../utils/ipc";
+
 import { useIsMounted } from "../hooks/useIsMounted";
+import * as ipc from "../utils/ipc";
 
 const LutrisContext = createContext(null);
 export const useLutris = () => useContext(LutrisContext);
@@ -25,8 +26,10 @@ export const LutrisProvider = ({ children }) => {
 
       const mappedGames = allGames.map((game) => ({
         id: game.id,
+        slug: game.slug,
+        runner: game.runner,
         title: game.name || game.slug,
-        playtimeSeconds: game.playtime * 3600,
+        playtimeSeconds: (game.playtime || 0) * 3600,
         lastPlayed: game.lastplayed ? new Date(game.lastplayed * 1000) : null,
         coverPath: game.coverPath,
         runtimeIconPath: game.runtimeIconPath || null,

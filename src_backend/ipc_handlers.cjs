@@ -1,16 +1,11 @@
 const { ipcMain, shell, nativeImage } = require("electron");
+
 const {
   getAudioInfo,
   setAudioVolume,
   setDefaultSink,
   setAudioMute,
 } = require("./audio_manager.cjs");
-const {
-  getGames,
-  launchGame,
-  closeRunningGameProcess,
-  toggleGamePause,
-} = require("./game_manager.cjs");
 const {
   getBluetoothState,
   powerOnAdapter,
@@ -19,13 +14,28 @@ const {
   connectToDevice: bluetoothConnect,
   disconnectFromDevice: bluetoothDisconnect,
 } = require("./bluetooth_manager.cjs");
+const { createBugReportFile } = require("./bugreport.cjs");
+const { getAppConfig, setAppConfig } = require("./config_manager.cjs");
 const {
   getBrightness,
   setBrightness,
   getNightLight,
   setNightLight,
 } = require("./display_manager.cjs");
-const { toggleWindowShow } = require("./window_manager.cjs");
+const {
+  getGames,
+  launchGame,
+  closeRunningGameProcess,
+  toggleGamePause,
+} = require("./game_manager.cjs");
+const {
+  invokeLutris,
+  getLutrisSettings,
+  updateLutrisSetting,
+  getLutrisRunners,
+} = require("./lutris_wrapper.cjs");
+const { getMainWindow } = require("./state.cjs");
+const { getUserTheme } = require("./theme_manager.cjs");
 const {
   logError,
   logInfo,
@@ -34,16 +44,7 @@ const {
   powerOffPc,
   rebootPc,
 } = require("./utils.cjs");
-const { getMainWindow } = require("./state.cjs");
-const { getUserTheme } = require("./theme_manager.cjs");
-const {
-  invokeLutris,
-  getLutrisConfig,
-  setLutrisBoolSetting,
-  setLutrisProtonVersion,
-} = require("./lutris_wrapper.cjs");
-const { getAppConfig, setAppConfig } = require("./config_manager.cjs");
-const { createBugReportFile } = require("./bugreport.cjs");
+const { toggleWindowShow } = require("./window_manager.cjs");
 
 const logLevelToLogger = {
   error: logError,
@@ -293,6 +294,32 @@ function registerIpcHandlers() {
   ipcHandleWithError("get-user-theme", async () => {
     return getUserTheme();
   });
+
+  // Lutris Settings
+  ipcHandleWithError(
+    "get-lutris-settings",
+    async (_event, gameSlug, runnerSlug) => {
+      return await getLutrisSettings(gameSlug, runnerSlug);
+    },
+  );
+
+  ipcHandleWithError("get-lutris-runners", async () => {
+    return await getLutrisRunners();
+  });
+
+  ipcHandleWithError(
+    "update-lutris-setting",
+    async (_event, section, key, value, type, gameSlug, runnerSlug) => {
+      return await updateLutrisSetting(
+        section,
+        key,
+        value,
+        type,
+        gameSlug,
+        runnerSlug,
+      );
+    },
+  );
 
   // Bug Reporter
   ipcOnWithError("create-bug-report", async () => {

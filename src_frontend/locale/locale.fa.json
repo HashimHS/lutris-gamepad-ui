@@ -36,12 +36,14 @@
     "Clear Search": "پاک‌کردن جستجو",
     "Force close": "بستن اجباری",
     "Launch Game": "راه‌اندازی بازی",
+    "Next": "Next",
+    "Options": "Options",
     "Pause Game": "Pause Game",
     "Power": "نیرو",
+    "Prev": "Prev",
     "Resume Game": "Resume Game",
     "Search": "جستجو",
-    "Toggle Overlay": "تغییر نمای رویی",
-    "game": "بازی"
+    "Toggle Overlay": "تغییر نمای رویی"
   },
   "components/CrashDialog.jsx": {
     "Close Application": "بستن برنامه",
@@ -78,43 +80,39 @@
     "Never": "هرگز",
     "Playtime: {{playtime}}": "زمان بازی: {{playtime}}"
   },
-  "components/GameLibrary.jsx": {
-    "Add games in Lutris and reload.": "بازی‌ها را در لوتریس بیافزایید و دوباره بارگذاری کنید.",
-    "My Library": "کتابخانه من",
-    "No games found": "هیچ بازی‌ای یافت نشد",
-    "No results for \"{{searchQuery}}\"": "هیچ نتیجه‌ای برای \"{{searchQuery}}\" یافت نشد",
-    "Search": "جستجو",
-    "Try a different search term or press 'B' to clear.": "متن دیگری را جستجو کنید یا برای پاک‌کردن 'B' را فشار دهید."
-  },
   "components/LibraryContainer.jsx": {
+    "Add games in Lutris and reload.": "Add games in Lutris and reload.",
     "Are you sure you want to close\n{{title}}?": "آیا مطمئنید که می‌خواهید\n{{title}} را ببندید؟",
     "Are you sure you want to pause\n{{title}}?": "Are you sure you want to pause\n{{title}}?",
     "Loading library...": "در حال بارگذاری کتابخانه...",
-    "Results for \"{{searchQuery}}\"": "نتایج برای \"{{searchQuery}}\"",
+    "My Library": "My Library",
+    "No games found": "No games found",
+    "No results for \"{{searchQuery}}\"": "No results for \"{{searchQuery}}\"",
+    "Search": "Search",
     "Search Library": "جستجوی کتابخانه",
     "This action will force-quit the game. Any unsaved progress may be lost.": "این کنش بازی را به‌صورت اجباری می‌بندد. هر پیشرفت ذخیره‌نشده‌ای ممکن است از دست برود.",
-    "This feature is experimental. Pausing the game may cause issues.": "This feature is experimental. Pausing the game may cause issues."
+    "This feature is experimental. Pausing the game may cause issues.": "This feature is experimental. Pausing the game may cause issues.",
+    "Try a different search term or press 'B' to clear.": "Try a different search term or press 'B' to clear."
   },
   "components/LoadingIndicator.jsx": {
     "Loading...": "در حال بارگذاری..."
   },
-  "components/LutrisSettings.jsx": {
-    "Close": "بستن",
-    "D3D Extras": "D3D Extras",
-    "DXVK": "DXVK",
-    "Disable": "غیرفعال کردن",
-    "Enable": "فعال کردن",
-    "Esync": "Esync",
-    "Failed to load or update Lutris settings.": "بارگیری یا به‌روزرسانی تنظیمات Lutris ناموفق بود.",
-    "Fsync": "Fsync",
-    "Loading Lutris Settings...": "در حال بارگذاری تنظیمات Lutris...",
-    "Lutris Settings": "تنظیمات Lutris",
-    "Next": "بعدی",
-    "No proton versions available.": "هیچ نسخه Proton در دسترس نیست.",
-    "Prev": "قبلی",
-    "Proton Version": "نسخه Proton",
-    "Reload": "بارگیری دوباره",
-    "Updating Lutris setting...": "در حال به‌روزرسانی تنظیمات Lutris..."
+  "components/LutrisSettingsFlow.jsx": {
+    "Failed to fetch Lutris runners": "Failed to fetch Lutris runners",
+    "Global": "Global",
+    "Lutris Settings": "Lutris Settings",
+    "Select Runner": "Select Runner"
+  },
+  "components/LutrisSettingsMenu.jsx": {
+    "Close": "Close",
+    "Default": "Default",
+    "Disable": "Disable",
+    "Enable": "Enable",
+    "Lutris Settings": "Lutris Settings",
+    "Next": "Next",
+    "Prev": "Prev",
+    "Select": "Select",
+    "Settings: {{name}}": "Settings: {{name}}"
   },
   "components/OnScreenKeyboard.jsx": {
     "Backspace": "پاک‌کردن",
@@ -131,6 +129,10 @@
     "Now Playing": "در حال بازی",
     "Paused": "Paused",
     "Playtime: {{playtime}}": "زمان بازی: {{playtime}}"
+  },
+  "components/SelectionMenu.jsx": {
+    "Back": "Back",
+    "Select": "Select"
   },
   "components/SettingsMenu.jsx": {
     "Auto-Pause Game On Overlay Switch": "توقف خودکار بازی هنگام جابجایی پوشش",
@@ -170,7 +172,7 @@
     "Display Settings": "Display Settings",
     "Exit Application": "خروج از برنامه",
     "Generate Bug Report": "Generate Bug Report",
-    "Lutris Settings": "تنظیمات Lutris",
+    "Lutris Settings": "Lutris Settings",
     "Open Lutris": "باز کردن لوتریس",
     "Power Off System": "خاموش‌کردن سامانه",
     "Reboot System": "باز راه‌اندازی سامانه",
@@ -208,5 +210,10 @@
     "UI Action Sound Feedbacks": "UI Action Sound Feedbacks",
     "Unmute": "فعال کردن صدا",
     "Volume": "میزان صدا"
+  },
+  "hooks/useGameShelves.js": {
+    "All Games": "All Games",
+    "Recently Played": "Recently Played",
+    "Results for \"{{searchQuery}}\"": "Results for \"{{searchQuery}}\""
   }
 }

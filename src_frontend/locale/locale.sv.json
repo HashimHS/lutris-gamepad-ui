@@ -36,12 +36,14 @@
     "Clear Search": "Rensa sökning",
     "Force close": "Tvinga stängning av",
     "Launch Game": "Starta spel",
+    "Next": "Next",
+    "Options": "Options",
     "Pause Game": "Pause Game",
     "Power": "Ström",
+    "Prev": "Prev",
     "Resume Game": "Resume Game",
     "Search": "Sök",
-    "Toggle Overlay": "Växla överlägg",
-    "game": "spel"
+    "Toggle Overlay": "Växla överlägg"
   },
   "components/CrashDialog.jsx": {
     "Close Application": "Stäng programmet",
@@ -78,43 +80,39 @@
     "Never": "Aldrig",
     "Playtime: {{playtime}}": "Speltid: {{playtime}}"
   },
-  "components/GameLibrary.jsx": {
-    "Add games in Lutris and reload.": "Lägg till spel i Lutris och ladda om.",
-    "My Library": "Mitt bibliotek",
-    "No games found": "Inga spel hittades",
-    "No results for \"{{searchQuery}}\"": "Inga resultat för \"{{searchQuery}}\"",
-    "Search": "Sök",
-    "Try a different search term or press 'B' to clear.": "Prova en annan sökterm eller tryck 'B' för att rensa."
-  },
   "components/LibraryContainer.jsx": {
+    "Add games in Lutris and reload.": "Add games in Lutris and reload.",
     "Are you sure you want to close\n{{title}}?": "Är du säker på att du vill stänga\n{{title}}?",
     "Are you sure you want to pause\n{{title}}?": "Are you sure you want to pause\n{{title}}?",
     "Loading library...": "Laddar bibliotek...",
-    "Results for \"{{searchQuery}}\"": "Resultat för \"{{searchQuery}}\"",
+    "My Library": "My Library",
+    "No games found": "No games found",
+    "No results for \"{{searchQuery}}\"": "No results for \"{{searchQuery}}\"",
+    "Search": "Search",
     "Search Library": "Sök i biblioteket",
     "This action will force-quit the game. Any unsaved progress may be lost.": "Denna åtgärd kommer att tvinga spelet att avslutas. Alla osparade framsteg kan gå förlorade.",
-    "This feature is experimental. Pausing the game may cause issues.": "This feature is experimental. Pausing the game may cause issues."
+    "This feature is experimental. Pausing the game may cause issues.": "This feature is experimental. Pausing the game may cause issues.",
+    "Try a different search term or press 'B' to clear.": "Try a different search term or press 'B' to clear."
   },
   "components/LoadingIndicator.jsx": {
     "Loading...": "Laddar..."
   },
-  "components/LutrisSettings.jsx": {
-    "Close": "Stäng",
-    "D3D Extras": "D3D Extras",
-    "DXVK": "DXVK",
-    "Disable": "Inaktivera",
-    "Enable": "Aktivera",
-    "Esync": "Esync",
-    "Failed to load or update Lutris settings.": "Det gick inte att läsa in eller uppdatera Lutris-inställningarna.",
-    "Fsync": "Fsync",
-    "Loading Lutris Settings...": "Laddar Lutris-inställningar...",
-    "Lutris Settings": "Lutris-inställningar",
-    "Next": "Nästa",
-    "No proton versions available.": "Inga Proton-versioner tillgängliga.",
-    "Prev": "Föreg.",
-    "Proton Version": "Proton-version",
-    "Reload": "Ladda om",
-    "Updating Lutris setting...": "Uppdaterar Lutris-inställning..."
+  "components/LutrisSettingsFlow.jsx": {
+    "Failed to fetch Lutris runners": "Failed to fetch Lutris runners",
+    "Global": "Global",
+    "Lutris Settings": "Lutris Settings",
+    "Select Runner": "Select Runner"
+  },
+  "components/LutrisSettingsMenu.jsx": {
+    "Close": "Close",
+    "Default": "Default",
+    "Disable": "Disable",
+    "Enable": "Enable",
+    "Lutris Settings": "Lutris Settings",
+    "Next": "Next",
+    "Prev": "Prev",
+    "Select": "Select",
+    "Settings: {{name}}": "Settings: {{name}}"
   },
   "components/OnScreenKeyboard.jsx": {
     "Backspace": "Backsteg",
@@ -131,6 +129,10 @@
     "Now Playing": "Spelas nu",
     "Paused": "Paused",
     "Playtime: {{playtime}}": "Speltid: {{playtime}}"
+  },
+  "components/SelectionMenu.jsx": {
+    "Back": "Back",
+    "Select": "Select"
   },
   "components/SettingsMenu.jsx": {
     "Auto-Pause Game On Overlay Switch": "Auto-pausa spel vid overlay-växling",
@@ -170,7 +172,7 @@
     "Display Settings": "Display Settings",
     "Exit Application": "Avsluta programmet",
     "Generate Bug Report": "Generate Bug Report",
-    "Lutris Settings": "Lutris-inställningar",
+    "Lutris Settings": "Lutris Settings",
     "Open Lutris": "Öppna Lutris",
     "Power Off System": "Stäng av systemet",
     "Reboot System": "Starta om systemet",
@@ -208,5 +210,10 @@
     "UI Action Sound Feedbacks": "UI Action Sound Feedbacks",
     "Unmute": "Slå på ljud",
     "Volume": "Volym"
+  },
+  "hooks/useGameShelves.js": {
+    "All Games": "All Games",
+    "Recently Played": "Recently Played",
+    "Results for \"{{searchQuery}}\"": "Results for \"{{searchQuery}}\""
   }
 }

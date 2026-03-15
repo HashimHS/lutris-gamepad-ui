@@ -6,9 +6,11 @@ import {
   useRef,
   useCallback,
 } from "react";
-import { logInfo } from "../utils/ipc";
-import { useSettingsState } from "./SettingsContext";
+
 import { getMappedInput } from "../utils/gamepad_mapping";
+import { logInfo } from "../utils/ipc";
+
+import { useSettingsState } from "./SettingsContext";
 
 const KEYBOARD_ACTION_MAP = {
   ArrowUp: "UP",
@@ -24,6 +26,8 @@ const KEYBOARD_ACTION_MAP = {
   y: "Y",
   1: "L1",
   2: "R1",
+  3: "Select",
+  4: "Start",
 };
 
 const GAMEPAD_SUPER_BUTTON_INDICES = [8, 9];
@@ -35,6 +39,8 @@ const GAMEPAD_BUTTON_INDEX_TO_ACTION_MAP = {
   3: "Y",
   4: "L1",
   5: "R1",
+  8: "Select",
+  9: "Start",
   12: "UP",
   13: "DOWN",
   14: "LEFT",
@@ -158,17 +164,20 @@ export const InputProvider = ({ children }) => {
     [...inputSubscribers.current].forEach((cb) => cb(eventObject));
   }, []);
 
-  const dispatchInputEvent = (inputEvent, inputSource) => {
-    if (inputSource && inputSource !== lastDetectedInputSourceRef.current) {
-      lastDetectedInputSourceRef.current = inputSource;
-      broadcastInputTypeChange();
-    }
-    if (document.hasFocus() || !inputEvent || inputEvent?.name === "Super") {
-      broadcastInputEvent(inputEvent);
-      return true;
-    }
-    return false;
-  };
+  const dispatchInputEvent = useCallback(
+    (inputEvent, inputSource) => {
+      if (inputSource && inputSource !== lastDetectedInputSourceRef.current) {
+        lastDetectedInputSourceRef.current = inputSource;
+        broadcastInputTypeChange();
+      }
+      if (document.hasFocus() || !inputEvent || inputEvent?.name === "Super") {
+        broadcastInputEvent(inputEvent);
+        return true;
+      }
+      return false;
+    },
+    [broadcastInputTypeChange, broadcastInputEvent],
+  );
 
   const releaseInputFocus = useCallback((uniqueId) => {
     setFocusStack((prevStack) => {
@@ -194,7 +203,7 @@ export const InputProvider = ({ children }) => {
           return stack[stack.length - 1].uniqueId === uniqueId;
         },
         release: () => {
-          releaseInputFocus(uniqueId, claimantId);
+          releaseInputFocus(uniqueId);
         },
       };
 
@@ -235,7 +244,7 @@ export const InputProvider = ({ children }) => {
     return () => {
       document.removeEventListener("keydown", handleKeyboardKeyDown);
     };
-  }, []);
+  }, [dispatchInputEvent]);
 
   useEffect(() => {
     const executeGamepadPoll = () => {
@@ -420,7 +429,7 @@ export const InputProvider = ({ children }) => {
       window.removeEventListener("focus", handleWindowFocusChange);
       window.removeEventListener("blur", handleWindowFocusChange);
     };
-  }, [refreshGamepadCount]);
+  }, [refreshGamepadCount, dispatchInputEvent]);
 
   const value = {
     subscribe: subscribeToInputEvents,
