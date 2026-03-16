@@ -34,13 +34,6 @@ const {
   toggleWindowShow,
   setStandaloneToggleHandler,
 } = require("./window_manager.cjs");
-const {
-  getCoverartPath,
-  getRuntimeIconPath,
-  getAllGamesCategories,
-  getLutrisGames,
-} = require("./lutris_wrapper.cjs");
-const { getAppConfig } = require("./config_manager.cjs");
 
 const runtimeIconCache = new Map();
 

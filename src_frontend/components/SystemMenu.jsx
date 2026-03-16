@@ -70,11 +70,6 @@ const SystemMenu = () => {
     setIsOpen(false);
   }, [showModal]);
 
-  const openLutrisSettingsModal = useCallback(() => {
-    showModal((hideThisModal) => <LutrisSettings onClose={hideThisModal} />);
-    setIsOpen(false);
-  }, [showModal]);
-
   const openAboutModal = useCallback(() => {
     showModal((hideThisModal) => <About onClose={hideThisModal} />);
     setIsOpen(false);
@@ -124,10 +119,6 @@ const SystemMenu = () => {
         action: openDisplaySettingsModal,
       },
       {
-        label: t("Lutris Settings"),
-        action: openLutrisSettingsModal,
-      },
-      {
         label: t("Bluetooth Settings"),
         action: openBluetoothSettingsModal,
       },
@@ -169,7 +160,6 @@ const SystemMenu = () => {
       openLutrisSettingsModal,
       openBluetoothSettingsModal,
       openSettingsModal,
-      openLutrisSettingsModal,
       t,
       settings.doubleConfirmPowerManagement,
     ],

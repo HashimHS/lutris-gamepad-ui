@@ -28,7 +28,6 @@ except ImportError:
     from lutris.runners import InvalidRunner as InvalidRunnerError
 
 SUBCOMMAND_OUTPUT_HEADER = "lutris-subcommand-output:"
-SUPPORTED_LUTRIS_BOOL_SETTINGS = {"dxvk", "d3d_extras", "esync", "fsync"}
 
 
 def _print_subcommand_output(json_serializable: typing.Any):
