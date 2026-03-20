@@ -3,6 +3,11 @@ export const launchGame = (game) => globalThis.electronAPI.launchGame(game.id);
 export const closeGame = (game) => globalThis.electronAPI.closeGame(game.id);
 export const openLutris = () => globalThis.electronAPI.openLutris();
 export const toggleGamePause = () => globalThis.electronAPI.toggleGamePause();
+export const getControllerState = () => globalThis.electronAPI.getControllerState();
+export const refreshControllerState = () =>
+  globalThis.electronAPI.refreshControllerState();
+export const setControllerInputMode = (mode) =>
+  globalThis.electronAPI.setControllerInputMode(mode);
 
 export const rebootPC = () => globalThis.electronAPI.rebootPC();
 export const powerOffPC = () => globalThis.electronAPI.powerOffPC();
@@ -90,6 +95,9 @@ export const onThemeUpdated = createSubscriber("user-theme-updated");
 export const onShowToast = createSubscriber("show-toast");
 export const onUpdateAvailable = createSubscriber("update-available");
 export const onAppConfigChanged = createSubscriber("app-config-changed");
+export const onControllerStateChanged = createSubscriber(
+  "controller-state-changed",
+);
 
 export const createBugReportFile = () =>
   globalThis.electronAPI.createBugReportFile();

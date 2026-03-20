@@ -17,6 +17,11 @@ const {
 const { createBugReportFile } = require("./bugreport.cjs");
 const { getAppConfig, setAppConfig } = require("./config_manager.cjs");
 const {
+  getControllerState,
+  refreshControllerState,
+  setControllerInputMode,
+} = require("./controller_manager.cjs");
+const {
   getBrightness,
   setBrightness,
   getNightLight,
@@ -84,6 +89,22 @@ function registerIpcHandlers() {
     return await getGames();
   });
 
+  ipcHandleWithError("get-controller-state", async () => {
+    return await getControllerState();
+  });
+
+  ipcHandleWithError("controller-refresh", async () => {
+    return await refreshControllerState();
+  });
+
+  ipcHandleWithError("set-controller-input-mode", async (_event, mode) => {
+    if (typeof mode !== "string" || mode.length === 0) {
+      throw new Error(`Invalid controller input mode: ${mode}`);
+    }
+
+    return setControllerInputMode(mode);
+  });
+
   ipcOnWithError("toggle-game-pause", async () => {
     toggleGamePause();
   });
@@ -94,7 +115,7 @@ function registerIpcHandlers() {
         `Invalid gameId: ${gameId}. Must be a non-negative integer.`,
       );
     }
-    launchGame(gameId);
+    await launchGame(gameId);
   });
 
   ipcOnWithError("close-game", async () => closeRunningGameProcess());
@@ -103,36 +124,6 @@ function registerIpcHandlers() {
     invokeLutris().catch((error) => {
       logError("unable to open lutris", error);
     });
-  });
-
-  ipcHandleWithError("get-lutris-config", async () => {
-    return await getLutrisConfig();
-  });
-
-  ipcHandleWithError("set-lutris-proton-version", async (_event, version) => {
-    if (typeof version !== "string" || !version.length) {
-      throw new Error(
-        `Invalid Lutris proton version: ${version}. Must be a non-empty string.`,
-      );
-    }
-
-    return await setLutrisProtonVersion(version);
-  });
-
-  ipcHandleWithError("set-lutris-bool-setting", async (_event, key, value) => {
-    if (typeof key !== "string" || !key.length) {
-      throw new Error(
-        `Invalid Lutris setting key: ${key}. Must be a non-empty string.`,
-      );
-    }
-
-    if (typeof value !== "boolean") {
-      throw new Error(
-        `Invalid Lutris boolean setting value: ${value}. Must be a boolean.`,
-      );
-    }
-
-    return await setLutrisBoolSetting(key, value);
   });
 
   ipcOnWithError("toggle-window-show", async () => toggleWindowShow());

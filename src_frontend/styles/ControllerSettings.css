@@ -1,0 +1,31 @@
+.controller-settings-summary {
+  margin-bottom: 16px;
+}
+
+.controller-settings-summary p {
+  margin: 0 0 8px;
+}
+
+.controller-settings-status {
+  color: var(--text-secondary-color, rgba(255, 255, 255, 0.72));
+  font-size: 0.95rem;
+}
+
+.controller-settings-value {
+  color: var(--accent-color);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.controller-settings-device {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.controller-settings-meta {
+  color: var(--text-secondary-color, rgba(255, 255, 255, 0.72));
+  font-size: 0.9rem;
+  text-transform: capitalize;
+}

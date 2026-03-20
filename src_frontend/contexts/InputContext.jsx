@@ -49,6 +49,19 @@ const GAMEPAD_BUTTON_INDEX_TO_ACTION_MAP = {
 };
 
 const GAMEPAD_ANALOG_THRESHOLD = 0.5;
+const VIRTUAL_GAMEPAD_ID_PATTERNS = [
+  "aegis virtual xbox controller",
+  "sony interactive entertainment dualsense wireless controller",
+];
+
+const isVirtualHelperGamepad = (gamepad) => {
+  const gamepadId = gamepad?.id?.toLowerCase();
+  if (!gamepadId) return false;
+
+  return VIRTUAL_GAMEPAD_ID_PATTERNS.some((pattern) =>
+    gamepadId.includes(pattern),
+  );
+};
 
 const mapGamepadAnalogToDPad = (axes, activeActionsSet, threshold) => {
   const [axisX, axisY] = axes;
@@ -216,7 +229,9 @@ export const InputProvider = ({ children }) => {
   );
 
   const refreshGamepadCount = useCallback(() => {
-    const count = navigator.getGamepads().filter(Boolean).length;
+    const count = navigator
+      .getGamepads()
+      .filter((gamepad) => gamepad && !isVirtualHelperGamepad(gamepad)).length;
     setConnectedGamepadCount(count);
     return count;
   }, []);
@@ -367,8 +382,8 @@ export const InputProvider = ({ children }) => {
     const startGamepadLoop = () => {
       stopGamepadLoop();
 
-      const count = navigator.getGamepads().filter(Boolean).length;
-      if (count === 0) {
+      const availableGamepadCount = navigator.getGamepads().filter(Boolean).length;
+      if (availableGamepadCount === 0) {
         isGamepadPollingActive.current = false;
         logInfo("InputProvider: No gamepads detected. Polling stopped.");
         return;

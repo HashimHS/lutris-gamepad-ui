@@ -7,6 +7,10 @@ const { globalShortcut } = require("electron");
 
 const { getAppConfig } = require("./config_manager.cjs");
 const {
+  startControllerSessionForGame,
+  stopControllerSession,
+} = require("./controller_manager.cjs");
+const {
   getCoverartPath,
   getRuntimeIconPath,
   getAllGamesCategories,
@@ -269,7 +273,12 @@ function toggleGamePause(options) {
   }
 }
 
-function launchGame(gameId) {
+async function getGameById(gameId) {
+  const games = await getLutrisGames();
+  return games.find((game) => game.id === gameId) || null;
+}
+
+async function launchGame(gameId) {
   if (getRunningGameProcess()) {
     throw new Error("A game is already running.");
   }
@@ -280,12 +289,18 @@ function launchGame(gameId) {
   }
 
   const gameStartTime = Date.now();
+  const game = await getGameById(gameId);
+  const controllerSession = await startControllerSessionForGame(game);
 
   const newGameProcess = spawn(
     "bash",
     [getLutrisWrapperPath(), `lutris:rungameid/${gameId}`],
     {
       detached: getAppConfig().keepGamesRunningOnQuit,
+      env: {
+        ...process.env,
+        ...controllerSession.environment,
+      },
     },
   );
 
@@ -351,6 +366,7 @@ function launchGame(gameId) {
   globalShortcut.register("CommandOrControl+X", toggleWindowShow);
 
   const onGameClosed = () => {
+    stopControllerSession();
     setRunningGameProcess(null);
     if (mainWindow) {
       mainWindow.webContents.send("game-closed");
@@ -364,6 +380,7 @@ function launchGame(gameId) {
 
   newGameProcess.on("error", (e) => {
     logError("game process error:", e);
+    stopControllerSession();
 
     const gameCloseTime = Date.now();
     if (gameCloseTime - gameStartTime < 10_000) {

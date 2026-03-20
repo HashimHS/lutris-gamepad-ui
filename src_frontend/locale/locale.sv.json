@@ -32,6 +32,18 @@
     "Confirm": "Bekräfta",
     "Select": "Välj"
   },
+  "components/ControllerSettings.jsx": {
+    "Choose how Lutris Gamepad UI should present your controller to games.": "Choose how Lutris Gamepad UI should present your controller to games.",
+    "Close": "Close",
+    "Connected Controllers": "Connected Controllers",
+    "Controller Settings": "Controller Settings",
+    "Input Mode": "Input Mode",
+    "Loading...": "Loading...",
+    "Refresh Controllers": "Refresh Controllers",
+    "Select": "Select",
+    "Setup Guide": "Setup Guide",
+    "The UI can see your controller through the browser gamepad API, but the backend helper has not matched it to a Linux event device yet.": "The UI can see your controller through the browser gamepad API, but the backend helper has not matched it to a Linux event device yet."
+  },
   "components/ControlsOverlay.jsx": {
     "Clear Search": "Rensa sökning",
     "Force close": "Tvinga stängning av",
@@ -137,6 +149,7 @@
   "components/SettingsMenu.jsx": {
     "Auto-Pause Game On Overlay Switch": "Auto-pausa spel vid overlay-växling",
     "Close": "Stäng",
+    "Controller Settings": "Controller Settings",
     "Decrease": "Minska",
     "Disable": "Inaktivera",
     "Double Confirm Power Management": "Double Confirm Power Management",
@@ -148,6 +161,7 @@
     "Keep Games Running On Quit": "Keep Games Running On Quit",
     "Library": "Library",
     "Next": "Next",
+    "Open": "Open",
     "Prev": "Prev",
     "Recently Played Shelf": "Nyligen spelade",
     "Settings": "Inställningar",

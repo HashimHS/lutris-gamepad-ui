@@ -10,6 +10,7 @@ const ALLOWED_RECEIVE_CHANNELS = new Set([
   "show-toast",
   "update-available",
   "app-config-changed",
+  "controller-state-changed",
 ]);
 
 contextBridge.exposeInMainWorld("electronAPI", {
@@ -30,6 +31,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
   launchGame: (gameId) => ipcRenderer.send("launch-game", gameId),
   closeGame: (gameId) => ipcRenderer.send("close-game", gameId),
   toggleGamePause: () => ipcRenderer.send("toggle-game-pause"),
+  getControllerState: () => ipcRenderer.invoke("get-controller-state"),
+  refreshControllerState: () => ipcRenderer.invoke("controller-refresh"),
+  setControllerInputMode: (mode) =>
+    ipcRenderer.invoke("set-controller-input-mode", mode),
 
   // Audio
   getAudioInfo: () => ipcRenderer.invoke("get-audio-info"),

@@ -62,6 +62,14 @@ function getLutrisWrapperPath() {
   return localeAppFile("lutris_wrapper.sh");
 }
 
+function getControllerHelperPath() {
+  return localeAppFile("controller_helper.py");
+}
+
+function getControllerUdevRulesPath() {
+  return localeAppFile("controller-uinput.rules");
+}
+
 function getElectronPreloadPath() {
   return localeAppFile("electron_preload.cjs");
 }
@@ -244,6 +252,8 @@ module.exports = {
   spawnGSettings,
   spawnDdcutil,
   getLutrisWrapperPath,
+  getControllerHelperPath,
+  getControllerUdevRulesPath,
   getElectronPreloadPath,
   retryAsync,
   logInfo,

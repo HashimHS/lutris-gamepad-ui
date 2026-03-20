@@ -231,6 +231,9 @@ const SettingsMenu = ({ onClose }) => {
           else if (actionName === "RIGHT") increaseAutorepeat();
           break;
         }
+        default: {
+          break;
+        }
       }
     },
     [
@@ -436,8 +439,9 @@ const SettingsMenu = ({ onClose }) => {
             </FocusableRow>
           );
         }
-        default:
+        default: {
           return null;
+        }
       }
     },
     [
