@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { useLutris } from "../contexts/LutrisContext";
+import { useLutrisActions } from "../contexts/LutrisContext";
 import { useModalActions, useModalState } from "../contexts/ModalContext";
 import { useSettingsState } from "../contexts/SettingsContext";
 import { useToastActions } from "../contexts/ToastContext";
@@ -50,10 +50,10 @@ const SystemMenu = () => {
   const { settings } = useSettingsState();
   const playActionSound = usePlayButtonActionSound();
 
-  const menuRef = useRef(null);
-  const menuPowerButtonRef = useRef(null);
+  const menuReference = useRef(null);
+  const menuPowerButtonReference = useRef(null);
 
-  const { fetchGames } = useLutris();
+  const { fetchGames } = useLutrisActions();
 
   const openAudioSettingsModal = useCallback(() => {
     showModal((hideThisModal) => <VolumeControl onClose={hideThisModal} />);
@@ -215,15 +215,15 @@ const SystemMenu = () => {
 
   useEffect(() => {
     if (isOpen) {
-      menuPowerButtonRef.current?.focus();
+      menuPowerButtonReference.current?.focus();
     } else {
-      menuPowerButtonRef.current?.blur();
+      menuPowerButtonReference.current?.blur();
     }
   }, [isOpen]);
 
   const toggleMenu = useCallback(() => {
-    setIsOpen((prev) => {
-      const isOpening = !prev;
+    setIsOpen((previous) => {
+      const isOpening = !previous;
       return isOpening;
     });
   }, []);
@@ -251,14 +251,18 @@ const SystemMenu = () => {
   ]);
 
   useEffect(() => {
-    window.addEventListener("toggle-system-menu", toggleMenu);
-    return () => window.removeEventListener("toggle-system-menu", toggleMenu);
+    globalThis.addEventListener("toggle-system-menu", toggleMenu);
+    return () =>
+      globalThis.removeEventListener("toggle-system-menu", toggleMenu);
   }, [toggleMenu]);
 
   useEffect(() => {
     if (!isOpen) return;
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      if (
+        menuReference.current &&
+        !menuReference.current.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -299,9 +303,9 @@ const SystemMenu = () => {
   );
 
   return (
-    <div className="system-menu-container" ref={menuRef}>
+    <div className="system-menu-container" ref={menuReference}>
       <button
-        ref={menuPowerButtonRef}
+        ref={menuPowerButtonReference}
         className="system-menu-toggle"
         onClick={toggleMenu}
         aria-label="Open System Menu"

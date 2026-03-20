@@ -65,24 +65,28 @@ const BluetoothMenu = ({ onClose }) => {
   const handleAction = useCallback(
     (actionName, item) => {
       switch (actionName) {
-        case "B":
+        case "B": {
           onClose();
           break;
-        case "A":
+        }
+        case "A": {
           if (item?.action) {
             item.action();
           }
           break;
-        case "X":
+        }
+        case "X": {
           if (isDiscovering) {
             stopDiscovery();
           } else {
             startDiscovery();
           }
           break;
-        case "Y":
+        }
+        case "Y": {
           forceRefresh();
           break;
+        }
       }
     },
     [onClose, isDiscovering, startDiscovery, stopDiscovery, forceRefresh],
@@ -100,9 +104,8 @@ const BluetoothMenu = ({ onClose }) => {
         isAdapter: true,
       }));
 
-    const deviceItems = devices
-      .slice()
-      .sort((a, b) => {
+    const deviceItems = [...devices]
+      .toSorted((a, b) => {
         if (a.isConnected !== b.isConnected) return a.isConnected ? -1 : 1;
         if (a.isPaired !== b.isPaired) return a.isPaired ? -1 : 1;
         return (a.name || a.address).localeCompare(b.name || b.address);
@@ -120,11 +123,15 @@ const BluetoothMenu = ({ onClose }) => {
 
   const renderItem = useCallback(
     (item, isFocused, onMouseEnter) => {
-      const actionButtonLabel = item.isAdapter
-        ? t("Power On")
-        : item.device.isConnected
+      let actionButtonLabel;
+
+      if (item.isAdapter) {
+        actionButtonLabel = t("Power On");
+      } else {
+        actionButtonLabel = item.device.isConnected
           ? t("Disconnect")
           : t("Connect");
+      }
 
       return (
         <FocusableRow

@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 
-import { useLutris } from "../contexts/LutrisContext";
+import { useLutris, useLutrisActions } from "../contexts/LutrisContext";
 import { useModalActions, useModalState } from "../contexts/ModalContext";
 import { useTranslation } from "../contexts/TranslationContext";
 import { useGameShelves } from "../hooks/useGameShelves";
@@ -22,20 +22,14 @@ export const LibraryContainerFocusID = "LibraryContainer";
 
 const LibraryContainer = () => {
   const { t } = useTranslation();
-  const {
-    games,
-    loading,
-    runningGame,
-    isGamePaused,
-    launchGame,
-    closeRunningGame,
-  } = useLutris();
+  const { games, loading, runningGame, isGamePaused } = useLutris();
+  const { launchGame, closeRunningGame } = useLutrisActions();
   const { showModal } = useModalActions();
   const { isModalOpen } = useModalState();
   const playActionSound = usePlayButtonActionSound();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const gameCloseCloseModalRef = useRef(null);
+  const gameCloseModalReference = useRef(null);
 
   const { shelves } = useGameShelves(games, searchQuery);
 
@@ -49,15 +43,15 @@ const LibraryContainer = () => {
   );
 
   useEffect(() => {
-    if (!runningGame && gameCloseCloseModalRef.current) {
-      gameCloseCloseModalRef.current();
-      gameCloseCloseModalRef.current = null;
+    if (!runningGame && gameCloseModalReference.current) {
+      gameCloseModalReference.current();
+      gameCloseModalReference.current = null;
     }
   }, [runningGame]);
 
   const [focusedGame, setFocusedGame] = useState(null);
 
-  const showSearchModalCb = useCallback(() => {
+  const showSearchModalCallback = useCallback(() => {
     showModal((hideThisModal) => (
       <OnScreenKeyboard
         label={t("Search Library")}
@@ -71,7 +65,7 @@ const LibraryContainer = () => {
     ));
   }, [setSearchQuery, showModal, searchQuery, t]);
 
-  const showGameSettingsModalCb = useCallback(
+  const showGameSettingsModalCallback = useCallback(
     (game) => {
       if (game) {
         showModal((hideThisModal) => (
@@ -86,21 +80,23 @@ const LibraryContainer = () => {
     [showModal],
   );
 
-  const clearSearchCb = useCallback(() => {
+  const clearSearchCallback = useCallback(() => {
     setSearchQuery("");
   }, [setSearchQuery]);
 
-  const toggleGamePauseCb = useCallback(() => {
+  const toggleGamePauseCallback = useCallback(() => {
     if (!runningGame) return;
 
-    if (gameCloseCloseModalRef.current) {
-      gameCloseCloseModalRef.current();
-      gameCloseCloseModalRef.current = null;
+    if (gameCloseModalReference.current) {
+      gameCloseModalReference.current();
+      gameCloseModalReference.current = null;
     }
 
-    if (!isGamePaused) {
+    if (isGamePaused) {
+      toggleGamePause();
+    } else {
       showModal((hideThisModal) => {
-        gameCloseCloseModalRef.current = hideThisModal;
+        gameCloseModalReference.current = hideThisModal;
         return (
           <ConfirmationDialog
             message={t("Are you sure you want to pause\n{{title}}?", {
@@ -117,20 +113,18 @@ const LibraryContainer = () => {
           />
         );
       });
-    } else {
-      toggleGamePause();
     }
   }, [runningGame, isGamePaused, t, showModal]);
 
-  const closeRunningGameDialogCb = useCallback(() => {
+  const closeRunningGameDialogCallback = useCallback(() => {
     if (!runningGame) return;
 
-    if (gameCloseCloseModalRef.current) {
-      gameCloseCloseModalRef.current();
+    if (gameCloseModalReference.current) {
+      gameCloseModalReference.current();
     }
 
     showModal((hideThisModal) => {
-      gameCloseCloseModalRef.current = hideThisModal;
+      gameCloseModalReference.current = hideThisModal;
       return (
         <ConfirmationDialog
           message={t("Are you sure you want to close\n{{title}}?", {
@@ -152,34 +146,38 @@ const LibraryContainer = () => {
   const handleAction = useCallback(
     (actionName, game) => {
       switch (actionName) {
-        case "A":
+        case "A": {
           if (game) {
             playActionSound();
             launchGame(game);
           }
           break;
-        case "B":
+        }
+        case "B": {
           if (searchQuery) {
             playActionSound();
-            clearSearchCb();
+            clearSearchCallback();
           }
           break;
-        case "X":
+        }
+        case "X": {
           playActionSound();
-          showSearchModalCb();
+          showSearchModalCallback();
           break;
-        case "Start":
+        }
+        case "Start": {
           playActionSound();
-          showGameSettingsModalCb(game);
+          showGameSettingsModalCallback(game);
           break;
+        }
       }
     },
     [
       searchQuery,
       launchGame,
-      clearSearchCb,
-      showSearchModalCb,
-      showGameSettingsModalCb,
+      clearSearchCallback,
+      showSearchModalCallback,
+      showGameSettingsModalCallback,
       playActionSound,
     ],
   );
@@ -188,14 +186,14 @@ const LibraryContainer = () => {
     (input) => {
       if (input.name === "B") {
         playActionSound();
-        closeRunningGameDialogCb();
+        closeRunningGameDialogCallback();
       }
       if (input.name === "X") {
         playActionSound();
-        toggleGamePauseCb();
+        toggleGamePauseCallback();
       }
     },
-    [closeRunningGameDialogCb, toggleGamePauseCb, playActionSound],
+    [closeRunningGameDialogCallback, toggleGamePauseCallback, playActionSound],
   );
 
   useScopedInput(
@@ -216,24 +214,25 @@ const LibraryContainer = () => {
   ]);
 
   const openSystemMenu = useCallback(() => {
-    window.dispatchEvent(new Event("toggle-system-menu"));
+    globalThis.dispatchEvent(new Event("toggle-system-menu"));
   }, []);
 
   if (loading) {
     return <LoadingIndicator message={t("Loading library...")} />;
   }
 
-  const controlsOverlayProps = {
+  const controlsOverlayProperties = {
     onOpenSystemMenu: openSystemMenu,
   };
 
   if (runningGame) {
-    controlsOverlayProps.onCloseRunningGame = closeRunningGameDialogCb;
-    controlsOverlayProps.onToggleGamePause = toggleGamePauseCb;
-    controlsOverlayProps.isGamePaused = isGamePaused;
+    controlsOverlayProperties.onCloseRunningGame =
+      closeRunningGameDialogCallback;
+    controlsOverlayProperties.onToggleGamePause = toggleGamePauseCallback;
+    controlsOverlayProperties.isGamePaused = isGamePaused;
 
     return (
-      <ControlsOverlay {...controlsOverlayProps}>
+      <ControlsOverlay {...controlsOverlayProperties}>
         <RunningGame
           game={runningGame}
           isPaused={isGamePaused}
@@ -245,18 +244,18 @@ const LibraryContainer = () => {
 
   if (!isModalOpen) {
     if (sections.length > 1) {
-      controlsOverlayProps.onPrevCategory = true;
-      controlsOverlayProps.onNextCategory = true;
+      controlsOverlayProperties.onPrevCategory = true;
+      controlsOverlayProperties.onNextCategory = true;
     }
     if (focusedGame) {
-      controlsOverlayProps.onLaunchGame = () => launchGame(focusedGame);
-      controlsOverlayProps.onShowGameSettings = () =>
-        showGameSettingsModalCb(focusedGame);
+      controlsOverlayProperties.onLaunchGame = () => launchGame(focusedGame);
+      controlsOverlayProperties.onShowGameSettings = () =>
+        showGameSettingsModalCallback(focusedGame);
     }
     if (searchQuery) {
-      controlsOverlayProps.onClearSearch = clearSearchCb;
+      controlsOverlayProperties.onClearSearch = clearSearchCallback;
     }
-    controlsOverlayProps.onShowSearchModal = showSearchModalCb;
+    controlsOverlayProperties.onShowSearchModal = showSearchModalCallback;
   }
 
   const renderItem = (game, { _isFocused }, { onFocus, onClick, ref }) => (
@@ -291,7 +290,7 @@ const LibraryContainer = () => {
   );
 
   return (
-    <ControlsOverlay {...controlsOverlayProps}>
+    <ControlsOverlay {...controlsOverlayProperties}>
       <GridMenu
         sections={sections}
         renderItem={renderItem}
