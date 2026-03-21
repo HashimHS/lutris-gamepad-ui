@@ -33,16 +33,32 @@
     "Select": "Seleziona"
   },
   "components/ControllerSettings.jsx": {
+    "Aegis Strategy": "Aegis Strategy",
+    "Back": "Back",
+    "Choose a controller to configure.": "Choose a controller to configure.",
     "Choose how Lutris Gamepad UI should present your controller to games.": "Choose how Lutris Gamepad UI should present your controller to games.",
     "Close": "Close",
     "Connected Controllers": "Connected Controllers",
     "Controller Settings": "Controller Settings",
     "Input Mode": "Input Mode",
     "Loading...": "Loading...",
+    "Override how Aegis decides which virtual controller to present to games.": "Override how Aegis decides which virtual controller to present to games.",
+    "Override the automatic Aegis strategy for this controller. Auto lets Aegis decide based on controller family.": "Override the automatic Aegis strategy for this controller. Auto lets Aegis decide based on controller family.",
     "Refresh Controllers": "Refresh Controllers",
+    "Remove the per-controller override and return to the global default input mode.": "Remove the per-controller override and return to the global default input mode.",
+    "Reset Input Mode to Default": "Reset Input Mode to Default",
     "Select": "Select",
     "Setup Guide": "Setup Guide",
-    "The UI can see your controller through the browser gamepad API, but the backend helper has not matched it to a Linux event device yet.": "The UI can see your controller through the browser gamepad API, but the backend helper has not matched it to a Linux event device yet."
+    "Test Controller": "Test Controller",
+    "The UI can see your controller through the browser gamepad API, but the backend helper has not matched it to a Linux event device yet.": "The UI can see your controller through the browser gamepad API, but the backend helper has not matched it to a Linux event device yet.",
+    "Virtual controller session active.": "Virtual controller session active.",
+    "Visualize buttons and analog sticks with the current input mode.": "Visualize buttons and analog sticks with the current input mode."
+  },
+  "components/ControllerTester.jsx": {
+    "Close": "Close",
+    "No controller detected — press a button to connect.": "No controller detected — press a button to connect.",
+    "Test Controller": "Test Controller",
+    "Testing": "Testing"
   },
   "components/ControlsOverlay.jsx": {
     "Clear Search": "Annulla ricerca",
@@ -183,6 +199,7 @@
     "Continue with exiting the application?": "Uscire dall'applicazione?",
     "Continue with system power off?": "Procedere con lo spegnimento del sistema?",
     "Continue with system reboot?": "Procedere con il riavvio del sistema?",
+    "Controller Settings": "Controller Settings",
     "Display Settings": "Display Settings",
     "Exit Application": "Esci",
     "Generate Bug Report": "Genera segnalazione bug",

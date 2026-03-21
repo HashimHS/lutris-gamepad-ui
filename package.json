@@ -21,8 +21,10 @@
     "preelectron:build": "npm run build:vite",
     "electron:build": "electron-builder --config electron-builder.config.cjs",
     "build": "npm run build:vite && npm run electron:build",
+    "build:inputtino-harness": "cmake -S tools/inputtino-harness -B build/inputtino-harness && cmake --build build/inputtino-harness",
     "electron:dev": "wait-on http://localhost:5173 && electron .",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:gamepad-compat": "python3 scripts/inputtino_compat_lab.py"
   },
   "dependencies": {
     "@futpib/paclient": "github:andrew-ld/paclient#450fc5046e2bb6b3ce7920211ec89bc3748d0463",

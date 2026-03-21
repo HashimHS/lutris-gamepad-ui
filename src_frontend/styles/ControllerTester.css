@@ -1,0 +1,304 @@
+.ct-root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 0 24px 16px;
+  width: 100%;
+}
+
+/* Mode badge */
+.ct-mode-badge {
+  display: inline-block;
+  padding: 4px 18px;
+  border-radius: 20px;
+  background: rgba(229, 9, 20, 0.12);
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: 0.04em;
+}
+
+/* Utility */
+.ct-flex-spacer {
+  flex: 1;
+}
+
+.ct-label {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* ── Triggers ─────────────────────────────────────────── */
+
+.ct-triggers-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.ct-trigger-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 220px;
+}
+
+.ct-trigger-left {
+  flex-direction: row;
+}
+
+.ct-trigger-right {
+  flex-direction: row-reverse;
+}
+
+.ct-trigger-track {
+  flex: 1;
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.ct-trigger-fill {
+  height: 100%;
+  background: var(--accent-color);
+  border-radius: 5px;
+  transition: width 0.04s linear;
+}
+
+.ct-trigger-pct {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+  min-width: 34px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Shoulder buttons ─────────────────────────────────── */
+
+.ct-shoulders-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.ct-shoulder {
+  padding: 8px 28px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  transition:
+    background 0.07s ease,
+    border-color 0.07s ease,
+    color 0.07s ease;
+  text-align: center;
+  min-width: 68px;
+}
+
+.ct-shoulder.pressed {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #fff;
+}
+
+/* ── Main body ────────────────────────────────────────── */
+
+.ct-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+}
+
+.ct-body-col {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ct-body-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* ── D-Pad ────────────────────────────────────────────── */
+
+.ct-dpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.ct-dpad-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ct-dpad-cell {
+  width: 34px;
+  height: 34px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  transition:
+    background 0.07s ease,
+    border-color 0.07s ease;
+}
+
+.ct-dpad-cell.pressed {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.ct-dpad-center {
+  width: 34px;
+  height: 34px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+}
+
+/* ── Center buttons ───────────────────────────────────── */
+
+.ct-center-btn {
+  padding: 6px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  transition:
+    background 0.07s ease,
+    border-color 0.07s ease,
+    color 0.07s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ct-center-btn.pressed {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #fff;
+}
+
+/* ── Face buttons ─────────────────────────────────────── */
+
+.ct-face-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.ct-face-row {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+}
+
+.ct-face-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 1rem;
+  font-weight: 700;
+  transition:
+    background 0.07s ease,
+    border-color 0.07s ease,
+    transform 0.07s ease,
+    box-shadow 0.07s ease;
+}
+
+.ct-face-btn.pressed {
+  transform: scale(0.9);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+}
+
+/* ── Analog sticks ────────────────────────────────────── */
+
+.ct-sticks-row {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.ct-stick-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.ct-stick-area {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  transition: border-color 0.07s ease;
+}
+
+.ct-stick-area.pressed {
+  border-color: var(--accent-color);
+}
+
+.ct-stick-crosshair-h,
+.ct-stick-crosshair-v {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.ct-stick-crosshair-h {
+  left: 10%;
+  right: 10%;
+  top: 50%;
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+.ct-stick-crosshair-v {
+  top: 10%;
+  bottom: 10%;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+}
+
+.ct-stick-knob {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.65);
+  transform: translate(-50%, -50%);
+  transition: background 0.07s ease;
+  z-index: 1;
+}
+
+.ct-stick-knob.pressed {
+  background: var(--accent-color);
+}

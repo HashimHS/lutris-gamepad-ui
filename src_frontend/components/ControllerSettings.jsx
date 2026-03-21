@@ -4,6 +4,7 @@ import { useModalActions } from "../contexts/ModalContext";
 import { useTranslation } from "../contexts/TranslationContext";
 import * as ipc from "../utils/ipc";
 
+import ControllerTester from "./ControllerTester";
 import DialogLayout from "./DialogLayout";
 import FocusableRow from "./FocusableRow";
 import RowBasedMenu from "./RowBasedMenu";
@@ -15,6 +16,12 @@ const INPUT_MODE_OPTIONS = [
   ["Native", "native"],
   ["XInput", "xinput"],
   ["Aegis", "aegis"],
+];
+
+const AEGIS_STRATEGY_OPTIONS = [
+  ["Auto", "auto"],
+  ["DualSense Native", "dualsense-native"],
+  ["XInput Fallback", "xinput-fallback"],
 ];
 
 const MODE_DESCRIPTIONS = {
@@ -72,6 +79,8 @@ const getBrowserControllers = () =>
       family: getBrowserControllerFamily(gamepad.id),
       capabilities: ["buttons", "sticks", "browser-detected"],
       isPrimary: gamepad.index === 0,
+      inputMode: "native",
+      aegisStrategyPreview: "native-fallback",
     }));
 
 const getHelperStatusMessage = (state, t) => {
@@ -96,6 +105,7 @@ const ControllerSettings = ({ onClose }) => {
   const [controllerState, setControllerState] = useState(null);
   const [browserControllers, setBrowserControllers] = useState([]);
   const [focusedItem, setFocusedItem] = useState(null);
+  const [selectedControllerId, setSelectedControllerId] = useState(null);
 
   const loadControllerState = useCallback(async () => {
     const state = await ipc.getControllerState();
@@ -144,56 +154,132 @@ const ControllerSettings = ({ onClose }) => {
     return browserControllers;
   }, [browserControllers, controllerState?.controllers]);
 
-  const openInputModePicker = useCallback(() => {
-    if (!controllerState) return;
+  const selectedController = useMemo(
+    () => controllers.find((controller) => controller.id === selectedControllerId) || null,
+    [controllers, selectedControllerId],
+  );
 
-    showModal((hideThisModal) => (
-      <SelectionMenu
-        title={t("Input Mode")}
-        description={t(
-          "Choose how Lutris Gamepad UI should present your controller to games.",
-        )}
-        options={INPUT_MODE_OPTIONS.map(([label, value]) => [t(label), value])}
-        currentValue={controllerState.inputMode}
-        onSelect={(value) => {
-          ipc
-            .setControllerInputMode(value)
-            .then(() => loadControllerState())
-            .catch((error) =>
-              ipc.logError("Failed to set controller input mode:", error),
-            );
-          hideThisModal();
-        }}
-        onClose={hideThisModal}
-      />
-    ));
-  }, [controllerState, loadControllerState, showModal, t]);
+  useEffect(() => {
+    if (selectedControllerId && !selectedController) {
+      setSelectedControllerId(null);
+    }
+  }, [selectedController, selectedControllerId]);
+
+  const openInputModePicker = useCallback(
+    (controller) => {
+      if (!controller) return;
+
+      showModal((hideThisModal) => (
+        <SelectionMenu
+          title={t("Input Mode")}
+          description={t(
+            "Choose how Lutris Gamepad UI should present your controller to games.",
+          )}
+          options={INPUT_MODE_OPTIONS.map(([label, value]) => [t(label), value])}
+          currentValue={controller.inputMode}
+          onSelect={(value) => {
+            ipc
+              .setControllerInputMode(controller.id, value)
+              .then(() => loadControllerState())
+              .catch((error) =>
+                ipc.logError("Failed to set controller input mode:", error),
+              );
+            hideThisModal();
+          }}
+          onClose={hideThisModal}
+        />
+      ));
+    },
+    [loadControllerState, showModal, t],
+  );
+
+  const openControllerTester = useCallback(
+    (controller) => {
+      if (!controller) return;
+
+      showModal((hideThisModal) => (
+        <ControllerTester
+          onClose={hideThisModal}
+          controllerState={controllerState}
+          controller={controller}
+        />
+      ));
+    },
+    [controllerState, showModal],
+  );
+
+  const openAegisStrategyPicker = useCallback(
+    (controller) => {
+      if (!controller) return;
+
+      showModal((hideThisModal) => (
+        <SelectionMenu
+          title={t("Aegis Strategy")}
+          description={t(
+            "Override how Aegis decides which virtual controller to present to games.",
+          )}
+          options={AEGIS_STRATEGY_OPTIONS.map(([label, value]) => [t(label), value])}
+          currentValue={controller.isAegisStrategyOverridden ? controller.aegisStrategyPreview : "auto"}
+          onSelect={(value) => {
+            ipc
+              .setControllerAegisStrategy(controller.id, value === "auto" ? null : value)
+              .then(() => loadControllerState())
+              .catch((error) =>
+                ipc.logError("Failed to set aegis strategy:", error),
+              );
+            hideThisModal();
+          }}
+          onClose={hideThisModal}
+        />
+      ));
+    },
+    [loadControllerState, showModal, t],
+  );
 
   const items = useMemo(() => {
-    const menuItems = [
+    if (!selectedController) {
+      const menuItems = controllers.map((controller) => ({
+        type: "CONTROLLER",
+        id: controller.id,
+        controller,
+        label: controller.name,
+      }));
+
+      menuItems.push({
+        type: "REFRESH",
+        label: t("Refresh Controllers"),
+      });
+
+      return menuItems;
+    }
+
+    return [
       {
         type: "INPUT_MODE",
         label: t("Input Mode"),
+        controller: selectedController,
+      },
+      selectedController.inputMode === "aegis" && {
+        type: "AEGIS_STRATEGY",
+        label: t("Aegis Strategy"),
+        controller: selectedController,
+      },
+      {
+        type: "TEST",
+        label: t("Test Controller"),
+        controller: selectedController,
+      },
+      selectedController.isInputModeOverridden && {
+        type: "RESET_INPUT_MODE",
+        label: t("Reset Input Mode to Default"),
+        controller: selectedController,
       },
       {
         type: "REFRESH",
         label: t("Refresh Controllers"),
       },
-    ];
-
-    if (controllers.length > 0) {
-      for (const controller of controllers) {
-        menuItems.push({
-          type: "CONTROLLER",
-          id: controller.id,
-          controller,
-          label: controller.name,
-        });
-      }
-    }
-
-    return menuItems;
-  }, [controllers, t]);
+    ].filter(Boolean);
+  }, [controllers, selectedController, t]);
 
   const handleRefresh = useCallback(() => {
     ipc
@@ -205,6 +291,11 @@ const ControllerSettings = ({ onClose }) => {
   const handleAction = useCallback(
     (actionName, item) => {
       if (actionName === "B") {
+        if (selectedController) {
+          setSelectedControllerId(null);
+          return;
+        }
+
         onClose();
         return;
       }
@@ -213,13 +304,24 @@ const ControllerSettings = ({ onClose }) => {
         return;
       }
 
-      if (item.type === "INPUT_MODE") {
-        openInputModePicker();
+      if (item.type === "CONTROLLER") {
+        setSelectedControllerId(item.controller.id);
+      } else if (item.type === "INPUT_MODE") {
+        openInputModePicker(item.controller);
+      } else if (item.type === "AEGIS_STRATEGY") {
+        openAegisStrategyPicker(item.controller);
+      } else if (item.type === "TEST") {
+        openControllerTester(item.controller);
+      } else if (item.type === "RESET_INPUT_MODE") {
+        ipc
+          .clearControllerInputMode(item.controller.id)
+          .then(() => loadControllerState())
+          .catch((error) => ipc.logError("Failed to reset input mode:", error));
       } else if (item.type === "REFRESH") {
         handleRefresh();
       }
     },
-    [handleRefresh, onClose, openInputModePicker],
+    [handleRefresh, onClose, openAegisStrategyPicker, openControllerTester, openInputModePicker, selectedController],
   );
 
   const renderItem = useCallback(
@@ -230,15 +332,66 @@ const ControllerSettings = ({ onClose }) => {
             key={item.type}
             isFocused={isFocused}
             onMouseEnter={onMouseEnter}
-            onClick={openInputModePicker}
+            onClick={() => openInputModePicker(item.controller)}
           >
             <span className="settings-menu-label">{item.label}</span>
             <span className="controller-settings-value">
               {t(
-                INPUT_MODE_OPTIONS.find(([, value]) => value === controllerState?.inputMode)?.[0] ||
+                INPUT_MODE_OPTIONS.find(([, value]) => value === item.controller?.inputMode)?.[0] ||
                   "Native",
               )}
             </span>
+          </FocusableRow>
+        );
+      }
+
+      if (item.type === "TEST") {
+        return (
+          <FocusableRow
+            key={item.type}
+            isFocused={isFocused}
+            onMouseEnter={onMouseEnter}
+            onClick={() => openControllerTester(item.controller)}
+          >
+            <span className="settings-menu-label">{item.label}</span>
+          </FocusableRow>
+        );
+      }
+
+      if (item.type === "AEGIS_STRATEGY") {
+        const strategyLabel =
+          item.controller.isAegisStrategyOverridden
+            ? AEGIS_STRATEGY_OPTIONS.find(
+                ([, v]) => v === item.controller.aegisStrategyPreview,
+              )?.[0] || item.controller.aegisStrategyPreview
+            : "Auto";
+        return (
+          <FocusableRow
+            key={item.type}
+            isFocused={isFocused}
+            onMouseEnter={onMouseEnter}
+            onClick={() => openAegisStrategyPicker(item.controller)}
+          >
+            <span className="settings-menu-label">{item.label}</span>
+            <span className="controller-settings-value">{t(strategyLabel)}</span>
+          </FocusableRow>
+        );
+      }
+
+      if (item.type === "RESET_INPUT_MODE") {
+        return (
+          <FocusableRow
+            key={item.type}
+            isFocused={isFocused}
+            onMouseEnter={onMouseEnter}
+            onClick={() =>
+              ipc
+                .clearControllerInputMode(item.controller.id)
+                .then(() => loadControllerState())
+                .catch((error) => ipc.logError("Failed to reset input mode:", error))
+            }
+          >
+            <span className="settings-menu-label">{item.label}</span>
           </FocusableRow>
         );
       }
@@ -261,9 +414,15 @@ const ControllerSettings = ({ onClose }) => {
           key={item.id}
           isFocused={isFocused}
           onMouseEnter={onMouseEnter}
+          onClick={() => setSelectedControllerId(item.controller.id)}
         >
           <div className="controller-settings-device">
-            <span className="settings-menu-label">{item.controller.name}</span>
+            <div className="controller-settings-device-header">
+              <span className="settings-menu-label">{item.controller.name}</span>
+              <span className="controller-settings-mode-badge">
+                {item.controller.inputMode}
+              </span>
+            </div>
             <span className="controller-settings-meta">
               {[
                 item.controller.family,
@@ -277,7 +436,7 @@ const ControllerSettings = ({ onClose }) => {
         </FocusableRow>
       );
     },
-    [controllerState?.inputMode, handleRefresh, openInputModePicker, t],
+    [handleRefresh, loadControllerState, openAegisStrategyPicker, openControllerTester, openInputModePicker, t],
   );
 
   const currentDescription = useMemo(() => {
@@ -285,22 +444,40 @@ const ControllerSettings = ({ onClose }) => {
       return t("Loading...");
     }
 
-    if (focusedItem?.type === "INPUT_MODE") {
-      return t(MODE_DESCRIPTIONS[controllerState.inputMode] || MODE_DESCRIPTIONS.native);
+    if (!selectedController) {
+      if (focusedItem?.type === "CONTROLLER") {
+        return focusedItem.controller.capabilities?.length
+          ? focusedItem.controller.capabilities.join(", ")
+          : focusedItem.controller.name;
+      }
+
+      return t("Choose a controller to configure.");
     }
 
-    if (focusedItem?.type === "CONTROLLER") {
-      return focusedItem.controller.capabilities?.length
-        ? focusedItem.controller.capabilities.join(", ")
-        : focusedItem.controller.name;
+    if (focusedItem?.type === "INPUT_MODE") {
+      return t(MODE_DESCRIPTIONS[selectedController.inputMode] || MODE_DESCRIPTIONS.native);
+    }
+
+    if (focusedItem?.type === "AEGIS_STRATEGY") {
+      return t(
+        "Override the automatic Aegis strategy for this controller. Auto lets Aegis decide based on controller family.",
+      );
+    }
+
+    if (focusedItem?.type === "RESET_INPUT_MODE") {
+      return t("Remove the per-controller override and return to the global default input mode.");
+    }
+
+    if (focusedItem?.type === "TEST") {
+      return t("Visualize buttons and analog sticks with the current input mode.");
     }
 
     return t(
-      STRATEGY_LABELS[controllerState.aegisStrategyPreview] ||
+      STRATEGY_LABELS[selectedController.aegisStrategyPreview] ||
         HELPER_STATUS_LABELS[controllerState.helperStatus] ||
         "",
     );
-  }, [controllerState, focusedItem, t]);
+  }, [controllerState, focusedItem, selectedController, t]);
 
   const helperStatusText = useMemo(() => {
     return getHelperStatusMessage(controllerState, t);
@@ -309,27 +486,45 @@ const ControllerSettings = ({ onClose }) => {
   const legendItems = useMemo(
     () => [
       { button: "A", label: t("Select") },
-      { button: "B", label: t("Close"), onClick: onClose },
+      {
+        button: "B",
+        label: selectedController ? t("Back") : t("Close"),
+        onClick: selectedController ? () => setSelectedControllerId(null) : onClose,
+      },
     ],
-    [onClose, t],
+    [onClose, selectedController, t],
   );
 
   return (
     <DialogLayout
-      title={t("Controller Settings")}
+      title={selectedController ? t(selectedController.name) : t("Controller Settings")}
       description={currentDescription}
       legendItems={legendItems}
       maxWidth="700px"
     >
       <div className="controller-settings-summary">
-        <p>
-          {t("Connected Controllers")}: {controllers.length}
-        </p>
+        {!selectedController && (
+          <p>
+            {t("Connected Controllers")}: {controllers.length}
+          </p>
+        )}
+        {selectedController && (
+          <p className="controller-settings-status">
+            {[selectedController.family, selectedController.connectionType, `${selectedController.vendorId}:${selectedController.productId}`]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        )}
         {!controllerState?.controllers?.length && browserControllers.length > 0 && (
           <p className="controller-settings-status">
             {t(
               "The UI can see your controller through the browser gamepad API, but the backend helper has not matched it to a Linux event device yet.",
             )}
+          </p>
+        )}
+        {controllerState?.helperActive && (
+          <p className="controller-settings-status controller-settings-status--active">
+            {t("Virtual controller session active.")}
           </p>
         )}
         {helperStatusText && (
@@ -349,7 +544,7 @@ const ControllerSettings = ({ onClose }) => {
         renderItem={renderItem}
         onAction={handleAction}
         onFocusChange={setFocusedItem}
-        focusId="ControllerSettings"
+        focusId={selectedController ? `ControllerSettings:${selectedController.id}` : "ControllerSettings"}
       />
     </DialogLayout>
   );

@@ -27,7 +27,35 @@ CONTROLLER_KEYWORDS = (
     "dualshock",
     "wireless controller",
     "8bitdo",
+    "pro controller",
+    "switch pro",
+    "joycon",
+    "joy-con",
+    "steam controller",
 )
+
+# VID → controller family. Takes priority over name-based detection.
+VENDOR_FAMILY_MAP = {
+    "054c": "playstation",  # Sony Interactive Entertainment
+    "045e": "xbox",         # Microsoft Corporation
+    "057e": "nintendo",     # Nintendo Co., Ltd
+    "28de": "steam",        # Valve Corporation
+    "2dc8": "8bitdo",       # 8BitDo Technology
+    "0f0d": "generic",      # Hori Co., Ltd
+    "0079": "generic",      # DragonRise Inc. (generic USB gamepads)
+    "0810": "generic",      # Personal Communication Systems
+    "046d": "generic",      # Logitech
+}
+
+# Sony PID → specific family (dualsense vs dualshock vs generic playstation)
+SONY_PRODUCT_FAMILIES = {
+    "0ce6": "dualsense",    # DualSense (PS5)
+    "0df2": "dualsense",    # DualSense Edge
+    "0e5f": "dualsense",    # DualSense Access Controller
+    "09cc": "dualshock",    # DualShock 4 (CUH-ZCT2, 2nd gen)
+    "05c4": "dualshock",    # DualShock 4 (CUH-ZCT1, 1st gen)
+    "0ba0": "dualshock",    # DualShock 4 USB Wireless Adaptor
+}
 
 DEFAULT_CAPABILITIES = {
     "buttons": [
@@ -79,7 +107,18 @@ TARGET_DEVICE_CONFIGS = {
 }
 
 
-def classify_family(name: str) -> str:
+def classify_family(name: str, vendor_id: str = "0000", product_id: str = "0000") -> str:
+    # VID/PID-based detection takes priority over name matching.
+    vid = (vendor_id or "0000").lower().zfill(4)
+    pid = (product_id or "0000").lower().zfill(4)
+
+    if vid in VENDOR_FAMILY_MAP:
+        base_family = VENDOR_FAMILY_MAP[vid]
+        if base_family == "playstation":
+            return SONY_PRODUCT_FAMILIES.get(pid, "playstation")
+        return base_family
+
+    # Fall back to name-based detection for unrecognised vendors.
     value = (name or "").lower()
     if "dualsense" in value or "ps5" in value:
         return "dualsense"
@@ -89,6 +128,15 @@ def classify_family(name: str) -> str:
         return "xbox"
     if "8bitdo" in value:
         return "8bitdo"
+    if (
+        "switch" in value
+        or "joycon" in value
+        or "joy-con" in value
+        or "pro controller" in value
+    ):
+        return "nintendo"
+    if "steam controller" in value or ("valve" in value and "controller" in value):
+        return "steam"
     if any(keyword in value for keyword in CONTROLLER_KEYWORDS):
         return "generic"
     return "unknown"
@@ -108,11 +156,29 @@ def infer_connection_type(sysfs_root: Path) -> str:
     return "unknown"
 
 
-def detect_capabilities(name: str):
+def detect_capabilities(name: str, evdev_caps: Optional[dict] = None) -> list:
     family = classify_family(name)
-    capabilities = ["buttons", "sticks", "triggers"]
+    capabilities = ["buttons", "sticks"]
+
+    if evdev_caps is not None and ecodes is not None:
+        abs_codes = _normalize_abs_codes(evdev_caps.get(ecodes.EV_ABS, []))
+        if ecodes.ABS_Z in abs_codes or ecodes.ABS_RZ in abs_codes:
+            capabilities.append("triggers")
+        ff_effects = evdev_caps.get(ecodes.EV_FF, [])
+        if ff_effects:
+            capabilities.append("rumble")
+    else:
+        # Nintendo Pro Controller has digital shoulder buttons, no analog triggers.
+        if family not in {"nintendo"}:
+            capabilities.append("triggers")
+
+    # Gyro and touchpad are inferred from controller family since evdev exposes
+    # them on a separate input node that isn't the gamepad interface.
     if family in {"dualsense", "dualshock"}:
-        capabilities.extend(["touchpad", "gyro"])
+        capabilities.extend(["gyro", "touchpad"])
+    elif family in {"nintendo", "steam"}:
+        capabilities.append("gyro")
+
     return sorted(set(capabilities))
 
 
@@ -177,14 +243,17 @@ def _controller_from_evdev(device):
     except Exception:
         pass
 
+    evdev_caps = device.capabilities()
+    family = classify_family(device.name, vendor_id, product_id)
+
     return {
         "id": event_name,
         "name": device.name,
         "vendorId": vendor_id.lower(),
         "productId": product_id.lower(),
         "connectionType": infer_connection_type(event_root),
-        "family": classify_family(device.name),
-        "capabilities": detect_capabilities(device.name),
+        "family": family,
+        "capabilities": detect_capabilities(device.name, evdev_caps),
         "eventPath": device.path,
     }
 
@@ -242,7 +311,7 @@ def enumerate_input_candidates():
                 "vendorId": vendor_id.lower(),
                 "productId": product_id.lower(),
                 "connectionType": infer_connection_type(event_root / "device"),
-                "family": classify_family(name),
+                "family": classify_family(name, vendor_id, product_id),
                 "capabilities": detect_capabilities(name),
                 "eventPath": f"/dev/input/{event_name}",
             }
@@ -332,6 +401,10 @@ def _target_abs_range(code):
     return None
 
 
+def _clamp(value, lower, upper):
+    return max(lower, min(upper, value))
+
+
 def _remap_abs_event(device, event):
     target_range = _target_abs_range(event.code)
     if target_range is None:
@@ -346,12 +419,11 @@ def _remap_abs_event(device, event):
     target_min, target_max = target_range
 
     if source_min == target_min and source_max == target_max:
-        return event.code, event.value
+        value = event.value
+    else:
+        value = _scale_value(event.value, source_min, source_max, target_min, target_max)
 
-    return (
-        event.code,
-        _scale_value(event.value, source_min, source_max, target_min, target_max),
-    )
+    return (event.code, _clamp(value, target_min, target_max))
 
 
 def _remap_key_event(event):
@@ -367,6 +439,14 @@ def _remap_key_event(event):
         ecodes.BTN_TOP2: ecodes.BTN_NORTH,
     }
     return key_map.get(event.code, event.code), event.value
+
+
+def _remap_trigger_button_event(event):
+    if event.code == ecodes.BTN_TL2:
+        return ecodes.ABS_Z, 255 if event.value else 0
+    if event.code == ecodes.BTN_TR2:
+        return ecodes.ABS_RZ, 255 if event.value else 0
+    return None
 
 
 def _update_dpad_state(dpad_state, event):
@@ -485,6 +565,13 @@ def serve_virtual_controller(mode: str, controller_id: Optional[str], exclusive_
             for _key, _mask in selector.select(timeout=0.25):
                 for event in input_device.read():
                     if event.type == ecodes.EV_KEY:
+                        trigger_remap = _remap_trigger_button_event(event)
+                        if trigger_remap is not None:
+                            code, value = trigger_remap
+                            ui.write(ecodes.EV_ABS, code, value)
+                            ui.syn()
+                            continue
+
                         if event.code in (
                             ecodes.BTN_DPAD_LEFT,
                             ecodes.BTN_DPAD_RIGHT,

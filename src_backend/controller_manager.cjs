@@ -148,6 +148,43 @@ function isDualSenseFamily(family) {
   return family === "dualsense" || family === "dualshock" || family === "playstation";
 }
 
+function getControllerConfigKey(controller) {
+  if (!controller) return null;
+
+  const vendorId = String(controller.vendorId || "unknown").toLowerCase();
+  const productId = String(controller.productId || "unknown").toLowerCase();
+  const name = slugifyGameName(controller.name || controller.id || "controller");
+
+  return `${vendorId}:${productId}:${name}`;
+}
+
+function getControllerInputModeFromConfig(appConfig, controller) {
+  const defaultInputMode = normalizeInputMode(appConfig?.controllerInputMode);
+  const controllerInputModes = appConfig?.controllerInputModes || {};
+  const controllerKey = getControllerConfigKey(controller);
+
+  if (!controllerKey) {
+    return defaultInputMode;
+  }
+
+  return normalizeInputMode(controllerInputModes[controllerKey] || defaultInputMode);
+}
+
+function getControllerInputMode(controller) {
+  return getControllerInputModeFromConfig(getAppConfig(), controller);
+}
+
+function getControllerAegisStrategyFromConfig(appConfig, controller) {
+  const controllerAegisStrategies = appConfig?.controllerAegisStrategies || {};
+  const controllerKey = getControllerConfigKey(controller);
+  if (!controllerKey) return null;
+  return controllerAegisStrategies[controllerKey] || null;
+}
+
+function getControllerAegisStrategy(controller) {
+  return getControllerAegisStrategyFromConfig(getAppConfig(), controller);
+}
+
 function resolveAegisStrategy(game, controllers = cachedControllerState.controllers) {
   const primaryController = controllers.find((controller) => controller.isPrimary) || controllers[0];
 
@@ -164,16 +201,14 @@ function resolveAegisStrategy(game, controllers = cachedControllerState.controll
   }
 
   if (isDualSenseFamily(primaryController.family)) {
-    if (game?.runner === "wine" || game?.runner === "winesteam" || game?.runner === "steam") {
-      return AEGIS_STRATEGIES.DUALSENSE_NATIVE;
-    }
-
     return AEGIS_STRATEGIES.DUALSENSE_NATIVE;
   }
 
   if (
     primaryController.family === "xbox" ||
     primaryController.family === "8bitdo" ||
+    primaryController.family === "nintendo" ||
+    primaryController.family === "steam" ||
     primaryController.family === "generic"
   ) {
     return AEGIS_STRATEGIES.XINPUT_FALLBACK;
@@ -195,6 +230,9 @@ function buildLaunchEnvironment({ inputMode, strategy, game, helperActive }) {
   if (strategy === AEGIS_STRATEGIES.XINPUT_FALLBACK) {
     environment.SDL_GAMECONTROLLER_USE_BUTTON_LABELS = "0";
     environment.SDL_JOYSTICK_HIDAPI = "1";
+    // Prevent SDL from presenting both the physical device and the virtual
+    // Xbox controller to the game, which causes duplicate controller entries.
+    environment.SDL_JOYSTICK_RAWINPUT = "0";
     environment.WINE_HIDE_GAMEPAD_RAWINPUT = "1";
   }
 
@@ -223,18 +261,51 @@ function makeSetupGuidePath() {
   return existsSync(rulesPath) ? rulesPath : null;
 }
 
-function buildControllerStatePayload({ controllers, helperStatus, helperDetails }) {
-  const inputMode = normalizeInputMode(getAppConfig().controllerInputMode);
+function buildControllerPreview(controller, controllers) {
+  const appConfig = getAppConfig();
+  const inputMode = getControllerInputModeFromConfig(appConfig, controller);
+  const overrideStrategy = getControllerAegisStrategyFromConfig(appConfig, controller);
   let aegisStrategyPreview = AEGIS_STRATEGIES.NATIVE_FALLBACK;
 
   if (inputMode === "aegis") {
-    aegisStrategyPreview = resolveAegisStrategy(null, controllers);
+    aegisStrategyPreview =
+      overrideStrategy ||
+      resolveAegisStrategy(null, [controller, ...controllers.filter((item) => item.id !== controller.id)]);
   } else if (inputMode === "xinput") {
     aegisStrategyPreview = AEGIS_STRATEGIES.XINPUT_FALLBACK;
   }
 
+  const configKey = getControllerConfigKey(controller);
+  const { controllerInputModes = {} } = appConfig;
+  const isInputModeOverridden = configKey
+    ? Object.prototype.hasOwnProperty.call(controllerInputModes, configKey)
+    : false;
+  const isAegisStrategyOverridden = Boolean(overrideStrategy);
+
   return {
-    controllers,
+    ...controller,
+    inputMode,
+    aegisStrategyPreview,
+    isInputModeOverridden,
+    isAegisStrategyOverridden,
+    configKey,
+  };
+}
+
+function buildControllerStatePayload({ controllers, helperStatus, helperDetails }) {
+  const enrichedControllers = controllers.map((controller) =>
+    buildControllerPreview(controller, controllers),
+  );
+  const primaryController =
+    enrichedControllers.find((controller) => controller.isPrimary) ||
+    enrichedControllers[0] ||
+    null;
+  const inputMode = primaryController?.inputMode || normalizeInputMode(getAppConfig().controllerInputMode);
+  const aegisStrategyPreview =
+    primaryController?.aegisStrategyPreview || AEGIS_STRATEGIES.NATIVE_FALLBACK;
+
+  return {
+    controllers: enrichedControllers,
     helperStatus,
     helperDetails,
     inputMode,
@@ -302,25 +373,79 @@ async function getControllerState() {
   return {
     ...cachedControllerState,
     inputMode: normalizeInputMode(getAppConfig().controllerInputMode),
+    helperActive: Boolean(activeControllerSession),
   };
 }
 
-function setControllerInputMode(mode) {
-  const normalizedMode = normalizeInputMode(mode);
-  const newConfig = setAppConfig("controllerInputMode", normalizedMode);
-  let aegisStrategyPreview = AEGIS_STRATEGIES.NATIVE_FALLBACK;
-
-  if (normalizedMode === "aegis") {
-    aegisStrategyPreview = resolveAegisStrategy();
-  } else if (normalizedMode === "xinput") {
-    aegisStrategyPreview = AEGIS_STRATEGIES.XINPUT_FALLBACK;
+function clearControllerInputMode(controllerId) {
+  const controller = cachedControllerState.controllers.find((item) => item.id === controllerId);
+  if (!controller) {
+    throw new Error(`Unknown controller id: ${controllerId}`);
   }
 
-  cachedControllerState = {
-    ...cachedControllerState,
-    inputMode: normalizedMode,
-    aegisStrategyPreview,
-  };
+  const controllerKey = getControllerConfigKey(controller);
+  const controllerInputModes = { ...(getAppConfig().controllerInputModes || {}) };
+  delete controllerInputModes[controllerKey];
+  setAppConfig("controllerInputModes", controllerInputModes);
+
+  cachedControllerState = buildControllerStatePayload({
+    controllers: cachedControllerState.controllers,
+    helperStatus: cachedControllerState.helperStatus,
+    helperDetails: cachedControllerState.helperDetails,
+  });
+  broadcastControllerStateChanged();
+}
+
+function setControllerAegisStrategy(controllerId, strategy) {
+  const controller = cachedControllerState.controllers.find((item) => item.id === controllerId);
+  if (!controller) {
+    throw new Error(`Unknown controller id: ${controllerId}`);
+  }
+
+  const controllerKey = getControllerConfigKey(controller);
+  const controllerAegisStrategies = { ...(getAppConfig().controllerAegisStrategies || {}) };
+
+  if (strategy === null || strategy === "auto") {
+    delete controllerAegisStrategies[controllerKey];
+  } else {
+    controllerAegisStrategies[controllerKey] = strategy;
+  }
+
+  setAppConfig("controllerAegisStrategies", controllerAegisStrategies);
+
+  cachedControllerState = buildControllerStatePayload({
+    controllers: cachedControllerState.controllers,
+    helperStatus: cachedControllerState.helperStatus,
+    helperDetails: cachedControllerState.helperDetails,
+  });
+  broadcastControllerStateChanged();
+}
+
+function setControllerInputMode(mode, controllerId = null) {
+  const normalizedMode = normalizeInputMode(mode);
+  let newConfig;
+
+  if (controllerId === null) {
+    newConfig = setAppConfig("controllerInputMode", normalizedMode);
+  } else {
+    const controller = cachedControllerState.controllers.find((item) => item.id === controllerId);
+    if (!controller) {
+      throw new Error(`Unknown controller id: ${controllerId}`);
+    }
+
+    const controllerKey = getControllerConfigKey(controller);
+    const controllerInputModes = {
+      ...(getAppConfig().controllerInputModes || {}),
+      [controllerKey]: normalizedMode,
+    };
+    newConfig = setAppConfig("controllerInputModes", controllerInputModes);
+  }
+
+  cachedControllerState = buildControllerStatePayload({
+    controllers: cachedControllerState.controllers,
+    helperStatus: cachedControllerState.helperStatus,
+    helperDetails: cachedControllerState.helperDetails,
+  });
   broadcastControllerStateChanged();
   return newConfig;
 }
@@ -398,9 +523,12 @@ async function startXInputHelperSession(controller, strategy) {
 }
 
 async function startControllerSessionForGame(game) {
-  const inputMode = normalizeInputMode(getAppConfig().controllerInputMode);
   const state = await getControllerState();
-  const primaryController = state.controllers.find((controller) => controller.isPrimary) || state.controllers[0] || null;
+  const primaryController =
+    state.controllers.find((controller) => controller.isPrimary) ||
+    state.controllers[0] ||
+    null;
+  const inputMode = getControllerInputMode(primaryController);
 
   if (inputMode === "native") {
     return {
@@ -418,7 +546,7 @@ async function startControllerSessionForGame(game) {
   let strategy =
     inputMode === "xinput"
       ? AEGIS_STRATEGIES.XINPUT_FALLBACK
-      : resolveAegisStrategy(game, state.controllers);
+      : resolveAegisStrategy(game, primaryController ? [primaryController] : state.controllers);
 
   let helperActive = false;
 
@@ -459,11 +587,17 @@ module.exports = {
   getControllerState,
   refreshControllerState,
   setControllerInputMode,
+  clearControllerInputMode,
+  setControllerAegisStrategy,
   startControllerSessionForGame,
   stopControllerSession,
   resolveAegisStrategy,
   buildLaunchEnvironment,
   normalizeInputMode,
+  getControllerConfigKey,
+  getControllerInputMode,
+  getControllerInputModeFromConfig,
+  getControllerAegisStrategyFromConfig,
 };
 
 if (process.env.NODE_ENV !== "test") {

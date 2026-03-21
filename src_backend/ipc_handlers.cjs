@@ -20,6 +20,8 @@ const {
   getControllerState,
   refreshControllerState,
   setControllerInputMode,
+  clearControllerInputMode,
+  setControllerAegisStrategy,
 } = require("./controller_manager.cjs");
 const {
   getBrightness,
@@ -97,13 +99,49 @@ function registerIpcHandlers() {
     return await refreshControllerState();
   });
 
-  ipcHandleWithError("set-controller-input-mode", async (_event, mode) => {
-    if (typeof mode !== "string" || mode.length === 0) {
-      throw new Error(`Invalid controller input mode: ${mode}`);
-    }
+  ipcHandleWithError(
+    "set-controller-input-mode",
+    async (_event, controllerIdOrMode, maybeMode) => {
+      const controllerId = typeof maybeMode === "string" ? controllerIdOrMode : null;
+      const mode = typeof maybeMode === "string" ? maybeMode : controllerIdOrMode;
 
-    return setControllerInputMode(mode);
-  });
+      if (typeof mode !== "string" || mode.length === 0) {
+        throw new Error(`Invalid controller input mode: ${mode}`);
+      }
+
+      if (controllerId !== null && typeof controllerId !== "string") {
+        throw new Error(`Invalid controller id: ${controllerId}`);
+      }
+
+      return setControllerInputMode(mode, controllerId);
+    },
+  );
+
+  ipcHandleWithError(
+    "clear-controller-input-mode",
+    async (_event, controllerId) => {
+      if (typeof controllerId !== "string" || controllerId.length === 0) {
+        throw new Error(`Invalid controller id: ${controllerId}`);
+      }
+
+      return clearControllerInputMode(controllerId);
+    },
+  );
+
+  ipcHandleWithError(
+    "set-controller-aegis-strategy",
+    async (_event, controllerId, strategy) => {
+      if (typeof controllerId !== "string" || controllerId.length === 0) {
+        throw new Error(`Invalid controller id: ${controllerId}`);
+      }
+
+      if (strategy !== null && typeof strategy !== "string") {
+        throw new Error(`Invalid aegis strategy: ${strategy}`);
+      }
+
+      return setControllerAegisStrategy(controllerId, strategy);
+    },
+  );
 
   ipcOnWithError("toggle-game-pause", async () => {
     toggleGamePause();

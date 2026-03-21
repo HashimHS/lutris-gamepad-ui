@@ -24,8 +24,30 @@
   width: 100%;
 }
 
+.controller-settings-device-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.controller-settings-mode-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--accent-color-subtle, rgba(255, 255, 255, 0.15));
+  color: var(--accent-color);
+}
+
 .controller-settings-meta {
   color: var(--text-secondary-color, rgba(255, 255, 255, 0.72));
   font-size: 0.9rem;
   text-transform: capitalize;
+}
+
+.controller-settings-status--active {
+  color: var(--accent-color);
 }

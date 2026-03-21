@@ -6,8 +6,12 @@ export const toggleGamePause = () => globalThis.electronAPI.toggleGamePause();
 export const getControllerState = () => globalThis.electronAPI.getControllerState();
 export const refreshControllerState = () =>
   globalThis.electronAPI.refreshControllerState();
-export const setControllerInputMode = (mode) =>
-  globalThis.electronAPI.setControllerInputMode(mode);
+export const setControllerInputMode = (controllerId, mode) =>
+  globalThis.electronAPI.setControllerInputMode(controllerId, mode);
+export const clearControllerInputMode = (controllerId) =>
+  globalThis.electronAPI.clearControllerInputMode(controllerId);
+export const setControllerAegisStrategy = (controllerId, strategy) =>
+  globalThis.electronAPI.setControllerAegisStrategy(controllerId, strategy);
 
 export const rebootPC = () => globalThis.electronAPI.rebootPC();
 export const powerOffPC = () => globalThis.electronAPI.powerOffPC();

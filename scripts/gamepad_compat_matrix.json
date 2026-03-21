@@ -1,0 +1,98 @@
+{
+  "profiles": [
+    {
+      "id": "xbox",
+      "inputtino_profile": "xbox",
+      "target_mode": "xinput"
+    },
+    {
+      "id": "dualsense",
+      "inputtino_profile": "ps5",
+      "target_mode": "xinput"
+    },
+    {
+      "id": "dualsense-aegis",
+      "inputtino_profile": "ps5",
+      "target_mode": "dualsense"
+    },
+    {
+      "id": "switch",
+      "inputtino_profile": "switch",
+      "target_mode": "xinput"
+    }
+  ],
+  "checks": [
+    {
+      "id": "button-a",
+      "kind": "button",
+      "command": "PRESS A",
+      "release": "RELEASE A",
+      "event_type": "EV_KEY",
+      "event_code": "BTN_SOUTH",
+      "pressed_value": 1,
+      "released_value": 0
+    },
+    {
+      "id": "button-guide",
+      "kind": "button",
+      "command": "PRESS GUIDE",
+      "release": "RELEASE GUIDE",
+      "event_type": "EV_KEY",
+      "event_code": "BTN_MODE",
+      "pressed_value": 1,
+      "released_value": 0
+    },
+    {
+      "id": "dpad-up",
+      "kind": "dpad",
+      "command": "PRESS DPAD_UP",
+      "release": "RELEASE DPAD_UP",
+      "hat_event_type": "EV_ABS",
+      "hat_event_code": "ABS_HAT0Y",
+      "hat_pressed_value": -1,
+      "hat_released_value": 0,
+      "button_event_type": "EV_KEY",
+      "button_event_code": "BTN_DPAD_UP",
+      "button_pressed_value": 1,
+      "button_released_value": 0
+    },
+    {
+      "id": "left-stick-right",
+      "kind": "axis",
+      "command": "STICK LS 1.0 0.0",
+      "release": "STICK LS 0.0 0.0",
+      "event_type": "EV_ABS",
+      "event_code": "ABS_X",
+      "direction": "positive"
+    },
+    {
+      "id": "button-x",
+      "kind": "button",
+      "command": "PRESS X",
+      "release": "RELEASE X",
+      "event_type": "EV_KEY",
+      "event_code": "BTN_WEST",
+      "pressed_value": 1,
+      "released_value": 0
+    },
+    {
+      "id": "right-stick-up",
+      "kind": "axis",
+      "command": "STICK RS 0.0 -1.0",
+      "release": "STICK RS 0.0 0.0",
+      "event_type": "EV_ABS",
+      "event_code": "ABS_RY",
+      "direction": "negative"
+    },
+    {
+      "id": "right-trigger",
+      "kind": "trigger",
+      "command": "TRIGGERS 0 255",
+      "release": "TRIGGERS 0 0",
+      "event_type": "EV_ABS",
+      "event_code": "ABS_RZ",
+      "pressed_min_value": 200,
+      "released_max_value": 5
+    }
+  ]
+}

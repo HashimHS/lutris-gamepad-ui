@@ -15,6 +15,8 @@ const defaultConfig = {
   keepGamesRunningOnQuit: false,
   enableUiActionSoundFeedbacks: true,
   controllerInputMode: "native",
+  controllerInputModes: {},
+  controllerAegisStrategies: {},
   controllerGameProfiles: {},
   controllerSetupAcknowledged: false,
 };

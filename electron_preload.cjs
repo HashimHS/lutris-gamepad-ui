@@ -33,8 +33,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
   toggleGamePause: () => ipcRenderer.send("toggle-game-pause"),
   getControllerState: () => ipcRenderer.invoke("get-controller-state"),
   refreshControllerState: () => ipcRenderer.invoke("controller-refresh"),
-  setControllerInputMode: (mode) =>
-    ipcRenderer.invoke("set-controller-input-mode", mode),
+  setControllerInputMode: (controllerId, mode) =>
+    ipcRenderer.invoke("set-controller-input-mode", controllerId, mode),
+  clearControllerInputMode: (controllerId) =>
+    ipcRenderer.invoke("clear-controller-input-mode", controllerId),
+  setControllerAegisStrategy: (controllerId, strategy) =>
+    ipcRenderer.invoke("set-controller-aegis-strategy", controllerId, strategy),
 
   // Audio
   getAudioInfo: () => ipcRenderer.invoke("get-audio-info"),
