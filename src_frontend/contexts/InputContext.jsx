@@ -142,6 +142,7 @@ export const InputProvider = ({ children }) => {
   const gamepadPollingRafId = useRef(null);
   const gamepadPollingIntervalId = useRef(null);
   const isGamepadPollingActive = useRef(false);
+  const backendGamepadState = useRef(null);
 
   const gamepadAutorepeatMs = useRef();
   const gamepadAutorepeatState = useRef({});
@@ -269,7 +270,14 @@ export const InputProvider = ({ children }) => {
       const currentTimestamp = performance.now();
       const activeActionsSet = new Set();
       const rawPressedIndices = new Set();
-      const gamepads = navigator.getGamepads();
+      const browserGamepads = navigator.getGamepads();
+
+      // Combine browser gamepads with backend evdev fallback
+      const gamepads = [...browserGamepads];
+      const backendGp = backendGamepadState.current;
+      if (backendGp && !browserGamepads.some(Boolean)) {
+        gamepads.push(backendGp);
+      }
 
       let activeGamepad = null;
 
@@ -382,8 +390,9 @@ export const InputProvider = ({ children }) => {
     const startGamepadLoop = () => {
       stopGamepadLoop();
 
-      const availableGamepadCount = navigator.getGamepads().filter(Boolean).length;
-      if (availableGamepadCount === 0) {
+      const browserGamepadCount = navigator.getGamepads().filter(Boolean).length;
+      const hasBackendGamepad = backendGamepadState.current !== null;
+      if (browserGamepadCount === 0 && !hasBackendGamepad) {
         isGamepadPollingActive.current = false;
         logInfo("InputProvider: No gamepads detected. Polling stopped.");
         return;
@@ -431,6 +440,18 @@ export const InputProvider = ({ children }) => {
       startGamepadLoop();
     }
 
+    // Subscribe to backend evdev gamepad state (fallback for Docker/container)
+    const removeEvdevListener = globalThis.electronAPI?.createListener(
+      "evdev-gamepad-state",
+      (state) => {
+        const wasNull = backendGamepadState.current === null;
+        backendGamepadState.current = state;
+        if (wasNull && !isGamepadPollingActive.current) {
+          startGamepadLoop();
+        }
+      },
+    );
+
     globalThis.addEventListener("gamepadconnected", handleGamepadConnected);
     globalThis.addEventListener(
       "gamepaddisconnected",
@@ -441,6 +462,8 @@ export const InputProvider = ({ children }) => {
 
     return () => {
       stopGamepadLoop();
+      backendGamepadState.current = null;
+      if (removeEvdevListener) removeEvdevListener();
       globalThis.removeEventListener(
         "gamepadconnected",
         handleGamepadConnected,

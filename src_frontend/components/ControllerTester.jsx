@@ -228,6 +228,21 @@ const ControllerTester = ({ onClose, controllerState, controller = null }) => {
 
   // Poll the raw Gamepad API via rAF — separate from the InputContext event
   // system so we can visualise every button without consuming navigation events.
+  const backendGamepadRef = useRef(null);
+
+  useEffect(() => {
+    const removeEvdevListener = globalThis.electronAPI?.createListener(
+      "evdev-gamepad-state",
+      (state) => {
+        backendGamepadRef.current = state;
+      },
+    );
+    return () => {
+      if (removeEvdevListener) removeEvdevListener();
+      backendGamepadRef.current = null;
+    };
+  }, []);
+
   useEffect(() => {
     const poll = () => {
       const gamepads = navigator.getGamepads?.() ?? [];
@@ -236,6 +251,9 @@ const ControllerTester = ({ onClose, controllerState, controller = null }) => {
       if (gp) {
         setGamepadName(gp.id);
         setGamepadState(readGamepadState(gp));
+      } else if (backendGamepadRef.current) {
+        setGamepadName(backendGamepadRef.current.id ?? "evdev controller");
+        setGamepadState(backendGamepadRef.current);
       } else {
         setGamepadName(null);
         setGamepadState(null);

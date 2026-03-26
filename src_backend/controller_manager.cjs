@@ -2,6 +2,7 @@ const { spawn } = require("node:child_process");
 const { existsSync } = require("node:fs");
 
 const { getAppConfig, setAppConfig } = require("./config_manager.cjs");
+const { EvdevGamepadPoller } = require("./evdev_gamepad_poller.cjs");
 const { getMainWindow } = require("./state.cjs");
 const {
   execFilePromise,
@@ -47,6 +48,9 @@ let cachedControllerState = {
 
 let activeControllerSession = null;
 let refreshTimer = null;
+let activeEvdevPoller = null;
+
+const EVDEV_GAMEPAD_STATE_CHANNEL = "evdev-gamepad-state";
 
 function isValidInputMode(mode) {
   return INPUT_MODES.has(mode);
@@ -320,6 +324,59 @@ function broadcastControllerStateChanged() {
   mainWindow.webContents.send(CONTROLLER_STATE_CHANNEL, cachedControllerState);
 }
 
+function stopEvdevPoller() {
+  if (activeEvdevPoller) {
+    activeEvdevPoller.stop();
+    activeEvdevPoller = null;
+    logInfo("EvdevPoller: stopped");
+  }
+}
+
+function startEvdevPollerForController(controller) {
+  if (!controller?.eventPath) return;
+  if (activeControllerSession) return;
+
+  // Already polling the same device
+  if (activeEvdevPoller?.isActive() && activeEvdevPoller.devicePath === controller.eventPath) {
+    return;
+  }
+
+  stopEvdevPoller();
+
+  const poller = new EvdevGamepadPoller(controller.eventPath, controller.name);
+
+  poller.on("state", (state) => {
+    const mainWindow = getMainWindow();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(EVDEV_GAMEPAD_STATE_CHANNEL, state);
+    }
+  });
+
+  poller.on("disconnected", () => {
+    if (activeEvdevPoller === poller) {
+      activeEvdevPoller = null;
+    }
+  });
+
+  poller.start();
+  activeEvdevPoller = poller;
+}
+
+function syncEvdevPoller() {
+  if (activeControllerSession) {
+    stopEvdevPoller();
+    return;
+  }
+
+  const controllers = cachedControllerState.controllers || [];
+  const primary = controllers.find((c) => c.isPrimary) || controllers[0];
+  if (primary) {
+    startEvdevPollerForController(primary);
+  } else {
+    stopEvdevPoller();
+  }
+}
+
 async function refreshControllerState() {
   try {
     const [probeResult, listResult] = await Promise.all([
@@ -344,6 +401,7 @@ async function refreshControllerState() {
   }
 
   broadcastControllerStateChanged();
+  syncEvdevPoller();
   return cachedControllerState;
 }
 
@@ -465,6 +523,8 @@ function stopControllerSession() {
       logWarn("Unable to stop controller helper session:", error);
     }
   }
+
+  syncEvdevPoller();
 }
 
 async function startXInputHelperSession(controller, strategy) {
@@ -472,6 +532,8 @@ async function startXInputHelperSession(controller, strategy) {
   if (helperState.helperStatus !== HELPER_STATUS.READY) {
     return null;
   }
+
+  stopEvdevPoller();
 
   const pythonCommand = await resolvePythonCommand();
   const helperPath = getControllerHelperPath();

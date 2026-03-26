@@ -11,6 +11,7 @@ const ALLOWED_RECEIVE_CHANNELS = new Set([
   "update-available",
   "app-config-changed",
   "controller-state-changed",
+  "evdev-gamepad-state",
 ]);
 
 contextBridge.exposeInMainWorld("electronAPI", {
