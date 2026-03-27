@@ -13,7 +13,7 @@
   "homepage": "https://github.com/andrew-ld/lutris-gamepad-ui/",
   "scripts": {
     "dev": "vite",
-    "start": "IS_DEV=1 concurrently \"npm run dev\" \"npm run electron:dev\"",
+    "start": "LUTRIS_GEMAPAD_UI_IS_DEV=1 concurrently \"npm run dev\" \"npm run electron:dev\"",
     "start:prod": "npm run build:vite && electron39 electron.cjs",
     "start:prod-wayland": "npm run build:vite && electron39 electron.cjs --ozone-platform=wayland",
     "start:prod-steamdeck": "npm run build:vite && gamescope -W 1280 -w 1280 -H 800 -h 800 -- electron39 electron.cjs",
@@ -24,7 +24,8 @@
     "build:inputtino-harness": "cmake -S tools/inputtino-harness -B build/inputtino-harness && cmake --build build/inputtino-harness",
     "electron:dev": "wait-on http://localhost:5173 && electron .",
     "lint": "eslint .",
-    "test:gamepad-compat": "python3 scripts/inputtino_compat_lab.py"
+    "test:gamepad-compat": "python3 scripts/inputtino_compat_lab.py",
+    "prettier": "prettier -w ."
   },
   "dependencies": {
     "@futpib/paclient": "github:andrew-ld/paclient#450fc5046e2bb6b3ce7920211ec89bc3748d0463",
@@ -52,6 +53,7 @@
     "eslint-plugin-unicorn": "^63.0.0",
     "globals": "^15.15.0",
     "postcss": "^8.5.6",
+    "prettier": "^3.8.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-scan": "^0.5.3",
