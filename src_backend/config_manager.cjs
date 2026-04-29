@@ -3,6 +3,8 @@ const { setKvStoreValue, getKvStoreValue } = require("./storage_kv.cjs");
 
 const CONFIG_KEY = "app_config";
 
+const IS_BLUETOOTH_MANAGER_DISABLED = process.env.LUTRIS_GAMEPAD_UI_DISABLE_BLUETOOTH_SETTINGS === "1"
+
 const defaultConfig = {
   zoomFactor: 1,
   showRecentlyPlayed: true,
@@ -46,4 +48,4 @@ function setAppConfig(key, value) {
   return newConfig;
 }
 
-module.exports = { getAppConfig, setAppConfig, subscribeConfigValueChange };
+module.exports = { getAppConfig, setAppConfig, subscribeConfigValueChange, IS_BLUETOOTH_MANAGER_DISABLED };
