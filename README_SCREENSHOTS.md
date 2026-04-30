@@ -18,6 +18,8 @@ When a game is launched, this "Now Playing" screen is displayed. It provides a c
 
 ![Now Playing Screenshot](./screenshots/nowplaying.png)
 
+---
+
 ### Lutris Settings
 
 Edit Lutris settings globally, per runner, or for a specific game directly within the app - without launching Lutris.
