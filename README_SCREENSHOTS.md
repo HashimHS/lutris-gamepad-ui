@@ -17,3 +17,9 @@ This is the main screen where you can browse your game library using a gamepad. 
 When a game is launched, this "Now Playing" screen is displayed. It provides a clean, focused view and allows you to force-close the game if needed.
 
 ![Now Playing Screenshot](./screenshots/nowplaying.png)
+
+### Lutris Settings
+
+Edit Lutris settings globally, per runner, or for a specific game directly within the app - without launching Lutris.
+
+![Lutris Settings Screenshot](./screenshots/lutris_settings.png)
