@@ -14,6 +14,7 @@ const { subscribeToBluetoothChanges } = require("./bluetooth_manager.cjs");
 const {
   getAppConfig,
   subscribeConfigValueChange,
+  IS_BLUETOOTH_MANAGER_DISABLED,
 } = require("./config_manager.cjs");
 const {
   startRemoteDesktopSession,
@@ -249,8 +250,13 @@ function createWindow(onWindowClosedCallback) {
 
   win.webContents.once("did-stop-loading", () => {
     initializeThemeManager();
-    subscribeToBluetoothChanges();
+
+    if (!IS_BLUETOOTH_MANAGER_DISABLED) {
+      subscribeToBluetoothChanges();
+    }
+
     win.webContents.setZoomFactor(getWindowZoomFactor());
+
     checkForUpdates().catch((error) => {
       logError("unable to check for new updates:", error);
     });

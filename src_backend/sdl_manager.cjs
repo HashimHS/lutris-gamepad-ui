@@ -2,8 +2,8 @@ const { getAppConfig } = require("./config_manager.cjs");
 const { resolveControllerIdentity } = require("./controller_family_db.cjs");
 const { getVirtualDevice } = require("./controller_mode_manager.cjs");
 const {
-  SDL2_LIBRARY_NAME,
-  bindSDL2,
+  SDL3_LIBRARY_NAME,
+  bindSDL3,
   configureKoffiSdl,
 } = require("./sdl_bindings.cjs");
 const { logError, logInfo, localeAppFile, logWarn } = require("./utils.cjs");
@@ -18,32 +18,30 @@ function getSdlHandle() {
       const koffi = require("koffi");
       configureKoffiSdl(koffi);
 
-      for (const libraryName of SDL2_LIBRARY_NAME) {
+      for (const libraryName of SDL3_LIBRARY_NAME) {
         try {
           const lib = koffi.load(libraryName);
-          const sdl = bindSDL2(lib);
+          const sdl = bindSDL3(lib);
 
-          if (sdl.SDL_Init(sdl.SDL_INIT_GAMECONTROLLER) !== 0) {
-            throw new Error(
-              "Failed to initialize SDL2 GameController subsystem",
-            );
+          if (!sdl.SDL_Init(sdl.SDL_INIT_GAMEPAD)) {
+            throw new Error("Failed to initialize SDL3 Gamepad subsystem");
           }
 
           const mappingPath = localeAppFile(
             "./src_backend/resources/gamecontrollerdb.txt",
           );
 
-          if (sdl.SDL_GameControllerAddMappingsFromFile(mappingPath) < 0) {
-            logWarn("SDL2 unable to load gamepad mapping", mappingPath);
+          if (sdl.SDL_AddGamepadMappingsFromFile(mappingPath) < 0) {
+            logWarn("SDL3 unable to load gamepad mapping", mappingPath);
           }
 
-          logInfo("SDL2 initialized!", libraryName);
+          logInfo("SDL3 initialized!", libraryName);
 
           const activeControllers = new Map();
 
           const cleanup = () => {
             for (const ptr of activeControllers.values()) {
-              if (ptr) sdl.SDL_GameControllerClose(ptr);
+              if (ptr) sdl.SDL_CloseGamepad(ptr);
             }
             activeControllers.clear();
             sdl.SDL_Quit();
@@ -51,16 +49,16 @@ function getSdlHandle() {
 
           process.on("exit", cleanup);
 
-          resolve({ sdl, activeControllers });
+          resolve({ sdl, activeControllers, koffi });
           return;
         } catch (error) {
           logError("Unable to load", libraryName, error);
         }
       }
 
-      reject(new Error("Unable to load sdl"));
+      reject(new Error("Unable to load SDL3"));
     } catch (error) {
-      logError("Fatal error while load sdl2:", error);
+      logError("Fatal error while load SDL3:", error);
       reject(error);
     }
   });
@@ -69,52 +67,67 @@ function getSdlHandle() {
 }
 
 async function pollGamepads() {
-  const { sdl, activeControllers } = await getSdlHandle();
+  const { sdl, activeControllers, koffi } = await getSdlHandle();
 
-  sdl.SDL_GameControllerUpdate();
+  sdl.SDL_PumpEvents();
+  sdl.SDL_UpdateGamepads();
 
-  const numJoysticks = sdl.SDL_NumJoysticks();
-  const gamepads = [];
+  const countPtr = new Int32Array(1);
+  const gamepadsPtr = sdl.SDL_GetGamepads(countPtr);
+  const numGamepads = countPtr[0];
+  const currentInstanceIds = new Set();
 
-  for (const [i, ptr] of activeControllers.entries()) {
-    if (i >= numJoysticks || sdl.SDL_GameControllerGetAttached(ptr) === 0) {
-      sdl.SDL_GameControllerClose(ptr);
-      activeControllers.delete(i);
+  if (gamepadsPtr) {
+    try {
+      const ids = koffi.decode(gamepadsPtr, "SDL_JoystickID", numGamepads);
+      for (let i = 0; i < numGamepads; i++) {
+        currentInstanceIds.add(ids[i]);
+      }
+    } finally {
+      sdl.SDL_free(gamepadsPtr);
     }
   }
 
-  for (let i = 0; i < numJoysticks; i++) {
-    if (sdl.SDL_IsGameController(i) === 0) continue;
+  const gamepads = [];
 
-    let ptr = activeControllers.get(i);
+  for (const [instanceId, ptr] of activeControllers.entries()) {
+    if (!currentInstanceIds.has(instanceId) || !sdl.SDL_GamepadConnected(ptr)) {
+      sdl.SDL_CloseGamepad(ptr);
+      activeControllers.delete(instanceId);
+    }
+  }
 
-    if (!ptr) {
-      ptr = sdl.SDL_GameControllerOpen(i);
-      if (ptr) activeControllers.set(i, ptr);
+  for (const instanceId of currentInstanceIds) {
+    let ptr = activeControllers.get(instanceId);
+
+    if (!ptr && sdl.SDL_IsGamepad(instanceId)) {
+      ptr = sdl.SDL_OpenGamepad(instanceId);
+      if (ptr) activeControllers.set(instanceId, ptr);
     }
 
     if (ptr) {
-      if (sdl.SDL_GameControllerGetAttached(ptr) === 0) {
-        sdl.SDL_GameControllerClose(ptr);
-        activeControllers.delete(i);
+      if (!sdl.SDL_GamepadConnected(ptr)) {
+        sdl.SDL_CloseGamepad(ptr);
+        activeControllers.delete(instanceId);
         continue;
       }
 
       const axes = [];
       const buttons = [];
 
-      for (let a = 0; a < sdl.SDL_CONTROLLER_AXIS_MAX; a++) {
-        const rawValue = sdl.SDL_GameControllerGetAxis(ptr, a);
-        axes.push(rawValue / 32_767);
+      for (let a = 0; a < sdl.SDL_GAMEPAD_AXIS_COUNT; a++) {
+        const rawValue = sdl.SDL_GetGamepadAxis(ptr, a);
+        const normalized = Math.max(-1, Math.min(1, rawValue / 32_767));
+        axes.push(normalized);
       }
 
-      for (let b = 0; b < sdl.SDL_CONTROLLER_BUTTON_MAX; b++) {
-        const isPressed = sdl.SDL_GameControllerGetButton(ptr, b);
+      for (let b = 0; b < sdl.SDL_GAMEPAD_BUTTON_COUNT; b++) {
+        const isPressed = sdl.SDL_GetGamepadButton(ptr, b);
         buttons.push(isPressed === 1);
       }
 
       gamepads.push({
-        index: i,
+        index: instanceId,
         axes: axes,
         buttons: buttons,
       });
@@ -124,14 +137,14 @@ async function pollGamepads() {
   return gamepads;
 }
 
-// Mapping definitions based on SDL2 Controller Enums and W3C Standard Gamepad layout.
-// SDL2 Buttons: 0:A, 1:B, 2:X, 3:Y, 4:BACK, 5:GUIDE, 6:START, 7:L3, 8:R3, 9:L1, 10:R1, 11:UP, 12:DOWN, 13:LEFT, 14:RIGHT
-// SDL2 Axes: 0:LeftX, 1:LeftY, 2:RightX, 3:RightY, 4:L2, 5:R2
+// Mapping definitions based on SDL3 Gamepad Enums and W3C Standard Gamepad layout.
+// SDL3 Buttons: 0:SOUTH, 1:EAST, 2:WEST, 3:NORTH, 4:BACK, 5:GUIDE, 6:START, 7:L3, 8:R3, 9:L1, 10:R1, 11:UP, 12:DOWN, 13:LEFT, 14:RIGHT
+// SDL3 Axes: 0:LeftX, 1:LeftY, 2:RightX, 3:RightY, 4:L2, 5:R2
 const BUTTON_MAPPING = [
-  { type: "button", index: 0 }, // 0: A
-  { type: "button", index: 1 }, // 1: B
-  { type: "button", index: 2 }, // 2: X
-  { type: "button", index: 3 }, // 3: Y
+  { type: "button", index: 0 }, // 0: SOUTH (A)
+  { type: "button", index: 1 }, // 1: EAST (B)
+  { type: "button", index: 2 }, // 2: WEST (X)
+  { type: "button", index: 3 }, // 3: NORTH (Y)
   { type: "button", index: 9 }, // 4: L1
   { type: "button", index: 10 }, // 5: R1
   { type: "axis", index: 4 }, // 6: L2 (Trigger)
@@ -155,7 +168,7 @@ const AXIS_MAPPING = [
 ];
 
 /**
- * Maps SDL2 gamepad data to the standard Web Gamepad API format.
+ * Maps SDL3 gamepad data to the standard Web Gamepad API format.
  * @param {Array} gamepads - The raw gamepads from pollGamepads()
  * @returns {Array} Gamepads in Web API format
  */
@@ -177,73 +190,81 @@ function mapSdlGamepadsToWebApi(gamepads) {
 }
 
 function isAppGeneratedXinputController(controller, virtualDevice) {
-  if (!virtualDevice) return false;
-
-  // Best signal: exact event node path match.
-  if (virtualDevice.eventPath && controller.path) {
-    return virtualDevice.eventPath === controller.path;
-  }
-
-  // Fallback: strict signature match.
-  if (!virtualDevice.name || !virtualDevice.vendorId || !virtualDevice.productId) {
-    return false;
-  }
-
-  if (controller.rawName !== virtualDevice.name) {
-    return false;
-  }
-
-  if (controller.vendorId !== virtualDevice.vendorId || controller.productId !== virtualDevice.productId) {
-    return false;
-  }
-
-  if (virtualDevice.version && controller.version) {
-    return controller.version === virtualDevice.version;
-  }
-
-  return true;
+  return Boolean(
+    virtualDevice?.eventPath &&
+      controller.path &&
+      virtualDevice.eventPath === controller.path,
+  );
 }
 
 async function listControllers() {
-  const { sdl, activeControllers } = await getSdlHandle();
+  const { sdl, activeControllers, koffi } = await getSdlHandle();
 
   sdl.SDL_PumpEvents();
-  sdl.SDL_GameControllerUpdate();
+  sdl.SDL_UpdateGamepads();
 
-  const numJoysticks = sdl.SDL_NumJoysticks();
+  const countPtr = new Int32Array(1);
+  const gamepadsPtr = sdl.SDL_GetGamepads(countPtr);
+  const numGamepads = countPtr[0];
+  const currentInstanceIds = new Set();
+
+  if (gamepadsPtr) {
+    try {
+      const decoded = koffi.decode(gamepadsPtr, "SDL_JoystickID", numGamepads);
+      for (let i = 0; i < numGamepads; i++) {
+        currentInstanceIds.add(decoded[i]);
+      }
+    } finally {
+      sdl.SDL_free(gamepadsPtr);
+    }
+  }
+
+  for (const [instanceId, ptr] of activeControllers.entries()) {
+    if (!currentInstanceIds.has(instanceId) || !sdl.SDL_GamepadConnected(ptr)) {
+      sdl.SDL_CloseGamepad(ptr);
+      activeControllers.delete(instanceId);
+    }
+  }
+
   const controllers = [];
   const appConfig = getAppConfig();
   const virtualDevice =
     appConfig?.controllerInputMode === "xinput" ? getVirtualDevice() : null;
 
-  for (let i = 0; i < numJoysticks; i++) {
-    if (sdl.SDL_IsGameController(i) === 0) continue;
-
-    let ptr = activeControllers.get(i);
-    if (!ptr) {
-      ptr = sdl.SDL_GameControllerOpen(i);
-      if (ptr) activeControllers.set(i, ptr);
+  for (const instanceId of currentInstanceIds) {
+    if (!sdl.SDL_IsGamepad(instanceId)) {
+      continue;
     }
 
-    if (!ptr || sdl.SDL_GameControllerGetAttached(ptr) === 0) continue;
+    let ptr = activeControllers.get(instanceId);
+    if (!ptr) {
+      ptr = sdl.SDL_OpenGamepad(instanceId);
+      if (ptr) {
+        activeControllers.set(instanceId, ptr);
+      }
+    }
 
-    const rawName = sdl.SDL_GameControllerName(ptr) || `Controller ${i + 1}`;
-    const vendorId = sdl.SDL_GameControllerGetVendor(ptr)
+    if (!ptr || !sdl.SDL_GamepadConnected(ptr)) {
+      continue;
+    }
+
+    const rawName = sdl.SDL_GetGamepadName(ptr) || `Controller ${controllers.length + 1}`;
+    const vendorId = sdl.SDL_GetGamepadVendor(ptr)
       .toString(16)
       .padStart(4, "0");
-    const productId = sdl.SDL_GameControllerGetProduct(ptr)
+    const productId = sdl.SDL_GetGamepadProduct(ptr)
       .toString(16)
       .padStart(4, "0");
-    const version = sdl.SDL_GameControllerGetProductVersion
-      ? sdl.SDL_GameControllerGetProductVersion(ptr).toString(16).padStart(4, "0")
+    const version = sdl.SDL_GetGamepadProductVersion
+      ? sdl.SDL_GetGamepadProductVersion(ptr).toString(16).padStart(4, "0")
       : null;
-    const path = sdl.SDL_GameControllerPath
-      ? sdl.SDL_GameControllerPath(ptr)
+    const path = sdl.SDL_GetGamepadPath
+      ? sdl.SDL_GetGamepadPath(ptr)
       : null;
     const identity = resolveControllerIdentity(vendorId, productId, rawName);
 
     const controller = {
-      index: i,
+      index: instanceId,
       name: identity.standardizedName,
       rawName,
       vendorId,

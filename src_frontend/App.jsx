@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import AppContent from "./components/AppContent";
 import AppInitializer from "./components/AppInitializer";
 import Compose from "./components/Compose";
@@ -13,20 +15,34 @@ import { SettingsProvider } from "./contexts/SettingsContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { TranslationProvider } from "./contexts/TranslationContext";
 import { UIProvider } from "./contexts/UIContext";
+import { useStaticSettings } from "./hooks/useStaticSettings";
 
 function App() {
-  const providers = [
-    SettingsProvider,
-    UIProvider,
-    InputProvider,
-    TranslationProvider,
-    ErrorBoundary,
-    LutrisProvider,
-    ModalProvider,
-    AudioProvider,
-    BluetoothProvider,
-    ToastProvider,
-  ];
+  const { staticSettings } = useStaticSettings();
+
+  const providers = useMemo(() => {
+    const providers = [
+      SettingsProvider,
+      UIProvider,
+      InputProvider,
+      TranslationProvider,
+      ErrorBoundary,
+      LutrisProvider,
+      ModalProvider,
+    ];
+
+    if (!staticSettings.DISABLE_BLUETOOTH_SETTINGS) {
+      providers.push(BluetoothProvider);
+    }
+
+    if (!staticSettings.DISABLE_AUDIO_SETTINGS) {
+      providers.push(AudioProvider);
+    }
+
+    providers.push(ToastProvider);
+
+    return providers;
+  }, [staticSettings]);
 
   return (
     <AppInitializer>

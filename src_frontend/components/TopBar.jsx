@@ -4,13 +4,37 @@ import packageJson from "../../package.json";
 import { useAudio } from "../contexts/AudioContext";
 import { useInput } from "../contexts/InputContext";
 import { useTranslation } from "../contexts/TranslationContext";
-
 import "../styles/TopBar.css";
+import { useStaticSettings } from "../hooks/useStaticSettings";
+
+const AudioIndicator = () => {
+  const { t } = useTranslation();
+  const { volume, isMuted, isLoading: audioIsLoading } = useAudio();
+
+  if (audioIsLoading) return null;
+
+  const getVolumeIcon = () => {
+    if (isMuted || volume === 0) return "🔇";
+    if (volume < 33) return "🔈";
+    if (volume < 66) return "🔉";
+    return "🔊";
+  };
+
+  return (
+    <>
+      <span className="top-bar-item top-bar-separator">|</span>
+      <span className="top-bar-item top-bar-volume">
+        {getVolumeIcon()} {isMuted ? t("Muted") : `${volume}%`}
+      </span>
+    </>
+  );
+};
 
 const TopBar = () => {
   const { t } = useTranslation();
   const { gamepadCount } = useInput();
-  const { volume, isMuted, isLoading: audioIsLoading } = useAudio();
+  const { staticSettings } = useStaticSettings();
+
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [time, setTime] = useState("");
 
@@ -40,16 +64,11 @@ const TopBar = () => {
     };
   }, []);
 
-  const getVolumeIcon = () => {
-    if (isMuted || volume === 0) return "🔇";
-    if (volume < 33) return "🔈";
-    if (volume < 66) return "🔉";
-    return "🔊";
-  };
-
   const getNetworkIndicator = () => {
     return isOnline ? "📶" : `❌ ${t("Offline")}`;
   };
+
+  const isAudioDisabled = staticSettings.DISABLE_AUDIO_SETTINGS;
 
   return (
     <div className="top-bar">
@@ -59,14 +78,9 @@ const TopBar = () => {
         <span className="top-bar-item top-bar-gamepads">
           🎮 {gamepadCount > 0 ? gamepadCount : "N/A"}
         </span>
-        {!audioIsLoading && (
-          <>
-            <span className="top-bar-item top-bar-separator">|</span>
-            <span className="top-bar-item top-bar-volume">
-              {getVolumeIcon()} {isMuted ? t("Muted") : `${volume}%`}
-            </span>
-          </>
-        )}
+
+        {!isAudioDisabled && <AudioIndicator />}
+
         <span className="top-bar-item top-bar-separator">|</span>
         <span className="top-bar-item">{getNetworkIndicator()}</span>
         <span className="top-bar-item top-bar-separator">|</span>
